@@ -1,0 +1,18 @@
+linux
+1 https://innowise-group.atlassian.net/jira/software/c/projects/DOT/issues/DOT-9075?jql=project%20%3D%20%22DOT%22%20ORDER%20BY%20created%20DESC 
+
+git
+2  https://innowise-group.atlassian.net/jira/software/c/projects/DOT/issues/DOT-9073?jql=project%20%3D%20%22DOT%22%20ORDER%20BY%20created%20DESC
+
+docker
+3   https://innowise-group.atlassian.net/jira/software/c/projects/DOT/issues/DOT-9076?jql=project%20%3D%20%22DOT%22%20ORDER%20BY%20created%20DESC
+
+ci/cd
+4  https://innowise-group.atlassian.net/jira/software/c/projects/DOT/issues/DOT-9077?jql=project%20%3D%20%22DOT%22%20ORDER%20BY%20created%20DESC
+
+ansible
+5  https://innowise-group.atlassian.net/jira/software/c/projects/DOT/issues/DOT-9078?jql=project%20%3D%20%22DOT%22%20ORDER%20BY%20created%20DESC
+
+terraform n aws
+6  https://innowise-group.atlassian.net/jira/software/c/projects/DOT/issues/DOT-9074?jql=project%20%3D%20%22DOT%22%20ORDER%20BY%20created%20DESC
+

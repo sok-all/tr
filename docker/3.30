@@ -1,0 +1,203 @@
+Task 3.30 Images. Различия базовых образов
+Flag removed
+Description
+
+Используемые технологии:  Linux, Docker, Nginx
+
+Мы уже упоминали в задании про минимизацию времени сборки образа, что одним из подходов ускорения сборки является использование уже готового базового образа со всеми зависимостями. Однако есть и другой подход, который также связан с использованием базового образа.
+
+Ты, конечно, обращал внимание на то, что, как в Dockerfile, так и в командах запуска контейнеров, мы использовали совершенно разные образы, которые имеют одно имя, но разные теги? Как правило, это знак того, что мы используем разные базовые образы, то есть образы операционной системы, на основе которой строится наше приложение.
+
+Например, у тебя уже имеется как минимум два образа:
+
+    nginx:stable
+
+    nginx:stable-alpine
+
+Если зайти в Docker Hub этого репозитория и найти адрес GitHub, где лежат Dockerfile данных образов, то мы увидим, что они собираются из двух базовых образов - Alpine и Debian Buster. В некоторых случаях этот список может быть гораздо больше, но, как правило, ограничивается двумя - один с маленьким размером, другой – более удобный.
+
+Как мы видим, принятой нотацией при таком подходе поддержки образов является формат тега $VERSION-$OS, его и стоит придерживаться.
+
+Спрашивается, зачем создают несколько версий одного приложения, но на базе разных операционных систем? Однозначного ответа дать нельзя, причиной может быть безопасность, размер, удобство и даже особенности операционной системы.
+
+Давай рассмотрим основные базовые образы и то, почему их используют. Начнем с самых простых, а закончим наиболее специфичными:
+
+    Ubuntu и Debian – такие же, как и установленные на серверах ОС Ubuntu и Debain. Подобные дистрибутивы очень удобны в работе ввиду широкого распространения, наличия удобной документации и огромного сообщества пользователей. Но за удобство приходится платить - как правило, образы на Ubuntu и Debian большие по размерам.
+
+    CentOS – альтернативный вариант для тех, кто привык работать в RHEL подобных дистрибутивах, либо для приложений, которые завязаны на RHEL архитектуру (как, например, FreeIPA).
+
+    Alpine - дистрибутив, который сочетает в себе безопасность, компактность и удобство в работе. Очень многие Docker-образы строятся на Alpine. Но в данном образе есть один нюанс - если у тебя есть пакет, который привязан к glibc, то этот образ вам не подойдет, в Alpine используется другая реализация libc, называемая musl. В остальных случаях использование Alpine может очень сильно уменьшить образ. Часто проблемным является связать Python приложение с Alpine.
+
+    BusyBox – образ реализует все команды при помощи швейцарского ножа встраиваемых систем - BusyBox. Пакетного менеджера, естественно, нет, поэтому спектр применения данного образа не очень широк. Но если ты собираешь образ с исполняемым файлом, у которого нет вообще никаких зависимостей, однако хочешь иметь еще хоть какие-то команды, этот образ именно то, что тебе нужно. Кроме того, данный образ часто используется в роли Debug-контейнера за счет имеющихся в его составе команд при минимальном объеме.
+
+    Scratch - образ, в котором есть... почти ничего в нем нет. Только пустота, только хардкор. Использовать его можно, если у тебя есть исполняемый файл, которому вообще ничего не нужно. И, как правило, Dockerfile у образов на базе этого контейнера состоит из нескольких строк- FROM, COPY, CMD/ENTRYPOINT.
+
+Давай сравним объем данных образов:
+
+    Ubuntu 18.04 - 64.2 MiB
+
+    Debian Buster - 114 MiB
+
+    Debian Buster Slim - 69.2 MiB
+
+    CentOS 8 - 220 MiB
+
+    Alpine 3.10.3 - 5.55 MiB
+
+    BusyBox 1.31.1 - 1.22 MiB
+
+    Scratch - 0 (pull невозможен - Error response from daemon: 'scratch' is a reserved name)
+
+Как видно, образ Alpine, с учетом своих функциональных возможностей вместе с объемом, представляет собой весьма привлекательное решение, чем и объясняется распространение образов с приложениями на базе этого дистрибутива.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Чекпоинты:
+
+    Склонируй содержимое из официального репозитория zookeeper.
+
+    Создай в репозитории /home/user/zookeeper/Dockerfile.alpine  и /home/user/zookeeper/Dockerfile.buster, где в качестве базовых образов используются разные версии openjdk, в которых собирается приложение в JAR-файл (Используйте образы openjdk:8-jdk-alpine и openjdk:8-jdk-buster ).
+
+FROM openjdk:8-jdk-alpine
+COPY . .
+RUN apk update && apk add curl
+RUN curl -O -k  https://mirrors.estointernet.in/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz\
+ && tar -xvzf apache-maven-3.6.3-bin.tar.gz
+ && export PATH=/apache-maven-3.6.3/bin:$PATH
+CMD ["mvn clean install -DskipTests"]
+
+FROM openjdk:8-jdk-buster
+COPY . .
+RUN apt-get update && apt-get install -y curl
+RUN curl -O -k  https://mirrors.estointernet.in/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz\
+ && tar -xvzf apache-maven-3.6.3-bin.tar.gz
+ && export PATH=/apache-maven-3.6.3/bin:$PATH
+CMD ["mvn clean install -DskipTests"]
+
+
+
+
+    Для сборки будет необходим mvn, тебе необходимо добавить его в контейнер (попробуй установить его не менеджером пакетов, а скачав через curl и распаковав его). Команда сборки приложения присутствует в README, тебе необходимо найти флаг, который позволит пропустить этап тестирования.
+
+    Собери оба этих образа c тегами zookeeper-alpine:latest и zookeeper-buster:latest. Выведи список образов и сравни итоговые размеры. Изучи docker history каждого из образов, обрати внимание на размеры слоёв
+ docker images
+REPOSITORY                 TAG             IMAGE ID       CREATED          SIZE
+zookeeper-buster           latest          56e8548e0f42   51 seconds ago   747MB
+zookeeper-alpine           latest          acdc714ae1e3   7 minutes ago    319MB
+
+alpine
+docker history acdc714ae1e3
+IMAGE          CREATED         CREATED BY                                      SIZE      COMMENT
+acdc714ae1e3   8 minutes ago   CMD ["mvn clean install -DskipTests"]           0B        buildkit.dockerfile.v0
+<missing>      8 minutes ago   RUN /bin/sh -c curl -O -k  https://mirrors.e…   20.8MB    buildkit.dockerfile.v0
+<missing>      8 minutes ago   RUN /bin/sh -c apk update && apk add curl # …   2.48MB    buildkit.dockerfile.v0
+<missing>      8 minutes ago   COPY . . # buildkit                             191MB     buildkit.dockerfile.v0
+<missing>      4 years ago     /bin/sh -c set -x  && apk add --no-cache   o…   99.3MB    
+<missing>      4 years ago     /bin/sh -c #(nop)  ENV JAVA_ALPINE_VERSION=8…   0B        
+<missing>      4 years ago     /bin/sh -c #(nop)  ENV JAVA_VERSION=8u212       0B        
+<missing>      4 years ago     /bin/sh -c #(nop)  ENV PATH=/usr/local/sbin:…   0B        
+<missing>      4 years ago     /bin/sh -c #(nop)  ENV JAVA_HOME=/usr/lib/jv…   0B        
+<missing>      4 years ago     /bin/sh -c {   echo '#!/bin/sh';   echo 'set…   87B       
+<missing>      4 years ago     /bin/sh -c #(nop)  ENV LANG=C.UTF-8             0B        
+<missing>      4 years ago     /bin/sh -c #(nop)  CMD ["/bin/sh"]              0B        
+<missing>      4 years ago     /bin/sh -c #(nop) ADD file:a86aea1f3a7d68f6a…   5.53MB  
+
+
+buster
+docker history 56e8548e0f42
+IMAGE          CREATED         CREATED BY                                      SIZE      COMMENT
+56e8548e0f42   2 minutes ago   CMD ["mvn clean install -DskipTests"]           0B        buildkit.dockerfile.v0
+<missing>      2 minutes ago   RUN /bin/sh -c curl -O -k  https://mirrors.e…   20.8MB    buildkit.dockerfile.v0
+<missing>      2 minutes ago   RUN /bin/sh -c apt-get update && apt-get ins…   20.7MB    buildkit.dockerfile.v0
+<missing>      2 minutes ago   COPY . . # buildkit                             191MB     buildkit.dockerfile.v0
+<missing>      18 months ago   /bin/sh -c set -eux;   arch="$(dpkg --print-…   209MB     
+<missing>      18 months ago   /bin/sh -c #(nop)  ENV JAVA_VERSION=8u342       0B        
+<missing>      18 months ago   /bin/sh -c #(nop)  ENV LANG=C.UTF-8             0B        
+<missing>      18 months ago   /bin/sh -c #(nop)  ENV PATH=/usr/local/openj…   0B        
+<missing>      18 months ago   /bin/sh -c { echo '#/bin/sh'; echo 'echo "$J…   27B       
+<missing>      18 months ago   /bin/sh -c #(nop)  ENV JAVA_HOME=/usr/local/…   0B        
+<missing>      18 months ago   /bin/sh -c set -eux;  apt-get update;  apt-g…   11.1MB    
+<missing>      18 months ago   /bin/sh -c apt-get update && apt-get install…   146MB     
+<missing>      18 months ago   /bin/sh -c set -ex;  if ! command -v gpg > /…   17.5MB    
+<missing>      18 months ago   /bin/sh -c set -eux;  apt-get update;  apt-g…   16.5MB    
+<missing>      18 months ago   /bin/sh -c #(nop)  CMD ["bash"]                 0B        
+<missing>      18 months ago   /bin/sh -c #(nop) ADD file:647206e0e9c1daa30…   114MB     
+
+    Опционально: Объедини команду скачки/распаковки mvn, команду сборки приложения и команду удаления mvn (после сборки приложения менеджер пакетов не нужен в образе) в одну директиву RUN. Собери образ заново и оцени новые размеры образов и слоёв
+    
+FROM openjdk:8-jdk-buster
+COPY . .
+RUN apt-get update && apt-get install -y curl \
+ && curl -O -k  https://mirrors.estointernet.in/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz\
+ && tar -xvzf apache-maven-3.6.3-bin.tar.gz \
+ && export PATH=/apache-maven-3.6.3/bin:$PATH \
+ && mvn clean install -DskipTests
+
+docker build . -f Dockerfile.buster -t zookeeper-buster:t   
+[+] Building 273.1s (8/8) FINISHED                                                        docker:default 
+
+
+
+FROM openjdk:8-jdk-alpine
+COPY . .
+RUN apk update && apk add curl \
+&&  curl -O -k  https://mirrors.estointernet.in/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz\
+&& tar -xvzf apache-maven-3.6.3-bin.tar.gz \
+&& export PATH=/apache-maven-3.6.3/bin:$PATH \
+&& mvn clean install -DskipTests \
+&& rm -rf apache-maven-3.6.3
+  
+docker build . -f Dockerfile.alpine -t zookeeper-alpine:t
+[+] Building 274.3s (8/8) FINISHED                                                        docker:default
+  
+docker images                                             
+REPOSITORY                 TAG             IMAGE ID       CREATED             SIZE                       
+zookeeper-alpine           t               16d06e51f897   42 seconds ago      622MB
+zookeeper-buster           t               789faa4a97c7   8 minutes ago       1.06GB
+
+
+docker history 16d06e51f897
+IMAGE          CREATED              CREATED BY                                      SIZE      COMMENT
+16d06e51f897   About a minute ago   RUN /bin/sh -c apk update && apk add curl &&…   325MB     buildkit.dockerfile.v0
+<missing>      5 minutes ago        COPY . . # buildkit                             191MB     buildkit.dockerfile.v0
+<missing>      4 years ago          /bin/sh -c set -x  && apk add --no-cache   o…   99.3MB    
+<missing>      4 years ago          /bin/sh -c #(nop)  ENV JAVA_ALPINE_VERSION=8…   0B        
+<missing>      4 years ago          /bin/sh -c #(nop)  ENV JAVA_VERSION=8u212       0B        
+<missing>      4 years ago          /bin/sh -c #(nop)  ENV PATH=/usr/local/sbin:…   0B        
+<missing>      4 years ago          /bin/sh -c #(nop)  ENV JAVA_HOME=/usr/lib/jv…   0B        
+<missing>      4 years ago          /bin/sh -c {   echo '#!/bin/sh';   echo 'set…   87B       
+<missing>      4 years ago          /bin/sh -c #(nop)  ENV LANG=C.UTF-8             0B        
+<missing>      4 years ago          /bin/sh -c #(nop)  CMD ["/bin/sh"]              0B        
+<missing>      4 years ago          /bin/sh -c #(nop) ADD file:a86aea1f3a7d68f6a…   5.53MB    
+
+docker history 789faa4a97c7
+IMAGE          CREATED          CREATED BY                                      SIZE      COMMENT
+789faa4a97c7   9 minutes ago    RUN /bin/sh -c apt-get update && apt-get ins…   359MB     buildkit.dockerfile.v0
+<missing>      13 minutes ago   COPY . . # buildkit                             191MB     buildkit.dockerfile.v0
+<missing>      18 months ago    /bin/sh -c set -eux;   arch="$(dpkg --print-…   209MB     
+<missing>      18 months ago    /bin/sh -c #(nop)  ENV JAVA_VERSION=8u342       0B        
+<missing>      18 months ago    /bin/sh -c #(nop)  ENV LANG=C.UTF-8             0B        
+<missing>      18 months ago    /bin/sh -c #(nop)  ENV PATH=/usr/local/openj…   0B        
+<missing>      18 months ago    /bin/sh -c { echo '#/bin/sh'; echo 'echo "$J…   27B       
+<missing>      18 months ago    /bin/sh -c #(nop)  ENV JAVA_HOME=/usr/local/…   0B        
+<missing>      18 months ago    /bin/sh -c set -eux;  apt-get update;  apt-g…   11.1MB    
+<missing>      18 months ago    /bin/sh -c apt-get update && apt-get install…   146MB     
+<missing>      18 months ago    /bin/sh -c set -ex;  if ! command -v gpg > /…   17.5MB    
+<missing>      18 months ago    /bin/sh -c set -eux;  apt-get update;  apt-g…   16.5MB    
+<missing>      18 months ago    /bin/sh -c #(nop)  CMD ["bash"]                 0B        
+<missing>      18 months ago    /bin/sh -c #(nop) ADD file:647206e0e9c1daa30…   114MB     
+
+
+       

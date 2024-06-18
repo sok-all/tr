@@ -1,0 +1,49 @@
+ vim /etc/nginx/sites-enabled/default 
+
+   # Add index.php to the list if you are using PHP
+        index index.html index.htm index.nginx-debian.html blue.html;
+
+
+
+
+ vim /etc/nginx/nginx.conf 
+ 
+ server {
+                listen 80;
+                location / {
+                root /var/www/html;
+                index blue.html;
+                }
+        }
+
+nginx цепляет этот индекс
+ /var/www/html/index.nginx-debian.html
+-rwxr-xr-x 1 root root 1329 Jan  9 15:04 yellow.html
+ удаляяем (либо переименовываем)
+ 
+ссылка по балансировщику
+https://habr.com/ru/companies/first/articles/683870/
+
+
+
+http {
+   upstream app{
+      least_conn;
+      server 10.2.0.100;
+      server 10.2.0.101;
+      server 10.2.0.102;
+   }
+   server {
+      listen 80;
+
+      location / {
+          proxy_pass http://app;
+      }
+   }
+}
+
+
+
+
+devops.edu@innowise-group.com / ZJonqkrqFFL0ejBW
+udemyinno@gmail.com / 2w57OX5Ii49bXYe7

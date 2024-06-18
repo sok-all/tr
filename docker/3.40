@@ -1,0 +1,84 @@
+    Запусти контейнер с Docker Registry.
+
+docker run -d -p 5000:5000 --restart always --name registry registry:2
+Unable to find image 'registry:2' locally
+2: Pulling from library/registry
+619be1103602: Pull complete 
+2ba4b87859f5: Pull complete 
+0da701e3b4d6: Pull complete 
+14a4d5d702c7: Pull complete 
+d1a4f6454cb2: Pull complete 
+Digest: sha256:f4e1b878d4bc40a1f65532d68c94dcfbab56aa8cba1f00e355a206e7f6cc9111
+Status: Downloaded newer image for registry:2
+2f71b1f1090ac4d8752fc62f4c46f996e8ed20b422e6090bfd0dcf1e6de19bad
+
+
+    Скачай образ nginx:stable, 
+docker pull nginx:stable
+stable: Pulling from library/nginx
+5d0aeceef7ee: Pull complete 
+92d3ca2007ad: Pull complete 
+3d431c75a3c2: Pull complete 
+6dd534b8a200: Pull complete 
+f0c9a19d6bab: Pull complete 
+057b4213e0a0: Pull complete 
+Digest: sha256:ee187e563496b690edaab157f89db924cd35fab42631309f4d62957baecf7d6c
+Status: Downloaded newer image for nginx:stable
+docker.io/library/nginx:stable
+    
+    переименуй образ для локального registry (ввиду того, что localhost захардкожен в Docker как разрешенный, адрес registry необходимо указать в виде ip адреса отличного от 127.0.0.1).
+
+docker tag registry:2 127.0.0.2:5000/registry2:2
+
+docker run -d -p 127.0.0.2:5000:5000 --restart=always --name registry-2 registry2:2
+c79d0f225e14d2f9a1276c479178f97d8620ddf2fa3ce7467d292ebb8c225886
+
+    Выведи список образов на твоем хосте.
+docker images
+REPOSITORY                 TAG             IMAGE ID       CREATED         SIZE
+registry                   2               a8781fe3b7a2   2 weeks ago     25.4MB
+127.0.0.2:5000/registry2   2               a8781fe3b7a2   2 weeks ago     25.4MB
+
+    Попробуй загрузить образ в registry.
+docker push 127.0.0.2:5000/registry2:2
+The push refers to repository [127.0.0.2:5000/registry2]
+Get "http://127.0.0.2:5000/v2/": dial tcp 127.0.0.2:5000: connect: connection refused
+   
+    Разреши Docker использовать небезопасные registry с помощью файла /etc/docker/daemon.json.
+daemon.json:
+"insecure-registries" : [ "127.0.0.2:5000" ]
+
+    Попробуй еще раз загрузить образ в registry.
+docker push 127.0.0.2:5000/registry2:2
+The push refers to repository [127.0.0.2:5000/registry2]
+a2e9568f0343: Pushed 
+95d5b7fa5097: Pushed 
+bf7f68cf6cd2: Pushed 
+98e9164d5432: Pushed 
+aedc3bda2944: Pushed 
+2: digest: sha256:12202eb78732e22f8658d595bd6e3d47ef9f13ede78e94e90974c020c7d7c1b3 size: 1363
+
+Удали твой новый образ с хоста.
+docker rmi 127.0.0.2:5000/registry2:2
+Untagged: 127.0.0.2:5000/registry2:2
+Untagged: 127.0.0.2:5000/registry2@sha256:12202eb78732e22f8658d595bd6e3d47ef9f13ede78e94e90974c020c7d7c1b3
+
+    Выведи список образов на твоем хосте.
+docker images
+REPOSITORY      TAG             IMAGE ID       CREATED         SIZE
+registry        2               a8781fe3b7a2   2 weeks ago     25.4MB
+
+    Скачай твой образ из registry.
+docker pull 127.0.0.2:5000/registry2:2
+2: Pulling from registry2
+Digest: sha256:12202eb78732e22f8658d595bd6e3d47ef9f13ede78e94e90974c020c7d7c1b3
+Status: Downloaded newer image for 127.0.0.2:5000/registry2:2
+127.0.0.2:5000/registry2:2
+
+    Выведи список образов на твоем хосте.
+    
+docker images
+REPOSITORY                 TAG             IMAGE ID       CREATED         SIZE
+127.0.0.2:5000/registry2   2               a8781fe3b7a2   2 weeks ago     25.4MB
+registry                   2               a8781fe3b7a2   2 weeks ago     25.4MB
+  

@@ -1,0 +1,113 @@
+
+
+    Запусти Docker в Docker, используя первый метод (dind).
+docker run --privileged -d docker:dind
+
+
+    Подключись к контейнеру c Docker и выполни внутри него следующие действия:
+
+        Получи список текущих образов и всех контейнеров;
+
+        Скачай образ redis:5;
+
+        Создай из загруженного образа контейнер с именем inno-dkr-26, работающий в фоне;
+
+        Еще раз выведи список всех контейнеров;
+
+        Удали контейнер;
+
+        Еще раз выведи список всех контейнеров.
+
+
+
+
+root@Vostro-3580:/home/sokol# docker run -d --privileged --name dind docker:dind
+3a19dd4eb43f0a7484cdabba162f2f800948c6b058c0c01f76c604526c8642d4
+root@Vostro-3580:/home/sokol# docker pps
+docker: 'pps' is not a docker command.
+See 'docker --help'
+root@Vostro-3580:/home/sokol# docker ps
+CONTAINER ID   IMAGE         COMMAND                  CREATED         STATUS         PORTS           NAMES
+3a19dd4eb43f   docker:dind   "dockerd-entrypoint.…"   6 seconds ago   Up 5 seconds   2375-2376/tcp   dind
+root@Vostro-3580:/home/sokol# docker ps
+root@Vostro-3580:/home/sokol# docker exec -it dind sh
+/ # docker ps -a
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+/ # docker pull redis:5
+5: Pulling from library/redis
+a603fa5e3b41: Pull complete 
+77631c3ef092: Pull complete 
+ed3847cf62b8: Pull complete 
+295236254fbb: Pull complete 
+1d25d6f70191: Pull complete 
+23acdbbf5eef: Pull complete 
+Digest: sha256:fc5ecd863862f89f04334b7cbb57e93c9790478ea8188a49f6e57b0967d38c75
+Status: Downloaded newer image for redis:5
+docker.io/library/redis:5
+/ # docker run -d --name inno-dkr-26 redis:5
+e4399e7a7a336867bd2f2d9d02349b48564ad847d0d0eb5ffd5c75f2652a565c
+/ # docker ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS      NAMES
+e4399e7a7a33   redis:5   "docker-entrypoint.s…"   4 seconds ago   Up 3 seconds   6379/tcp   inno-dkr-26
+/ # docker rm -f inno-dkr-26
+inno-dkr-26
+/ # docker ps -a
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+/ # 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Запусти Docker в Docker, используя второй метод (проброс сокета). Повторите те же самые действия из предыдущего пункта.
+
+
+root@Vostro-3580:/home/sokol# docker run -ti --privileged -v /var/run/docker.sock://var/run/docker.sock docker:18.09.6  
+Unable to find image 'docker:18.09.6' locally
+18.09.6: Pulling from library/docker
+921b31ab772b: Pull complete 
+2d3896533852: Pull complete 
+28c34ce20860: Pull complete 
+486e666d6cf0: Pull complete 
+6fd085249ebe: Pull complete 
+36c1cec63702: Pull complete 
+Digest: sha256:653d652a8bbe3c8db5d5275e122537b6eed79af320add996cb7553ff664c6b67
+Status: Downloaded newer image for docker:18.09.6
+/ # docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+3eb2d12ef317        docker:18.09.6      "docker-entrypoint.s…"   19 seconds ago      Up 17 seconds                           blissful_chatterjee
+/ # docker pull redis:5
+5: Pulling from library/redis
+a603fa5e3b41: Pull complete 
+77631c3ef092: Pull complete 
+ed3847cf62b8: Pull complete 
+295236254fbb: Pull complete 
+1d25d6f70191: Pull complete 
+23acdbbf5eef: Pull complete 
+Digest: sha256:fc5ecd863862f89f04334b7cbb57e93c9790478ea8188a49f6e57b0967d38c75
+Status: Downloaded newer image for redis:5
+/ # docker run -d --name inno-dkr-26 redis:5
+346340602eafb889c60bb928c3c556f923170a3f9b6a21d7e715e3fab2a555db
+/ # docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED              STATUS              PORTS               NAMES
+346340602eaf        redis:5             "docker-entrypoint.s…"   7 seconds ago        Up 5 seconds        6379/tcp            inno-dkr-26
+3eb2d12ef317        docker:18.09.6      "docker-entrypoint.s…"   About a minute ago   Up About a minute                       blissful_chatterjee
+/ #  docker rm -f inno-dkr-26
+inno-dkr-26
+/ # docker ps -a
+CONTAINER ID        IMAGE               COMMAND                  CREATED              STATUS                     PORTS               NAMES
+3eb2d12ef317        docker:18.09.6      "docker-entrypoint.s…"   About a minute ago   Up About a minute                              blissful_chatterjee
+a668a9768fff        docker              "dockerd-entrypoint.…"   5 minutes ago        Exited (1) 5 minutes ago                       eloquent_payne
+66cc0556b62d        docker              "dockerd-entrypoint.…"   6 minutes ago        Exited (1) 6 minutes ago                       blissful_pasteur
+/ # 
+
+

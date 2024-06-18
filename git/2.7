@@ -1,0 +1,88 @@
+Task 2.7 Configs
+Description
+
+Используемые технологии:  Linux, Git
+
+Жизнь это сплошная боль и печаль, конечно же, если ты не настроил конфиги, чтобы они делали всю работу за тебя. Заглянем наперед - ты прошел на проект, тебе была выдана почта %username%@%company%.com, и как ты уже наверное знаешь, только под этой почтой можно создавать и отправлять коммиты, связанные с этим проектом. Поэтому ты склонировал репозитории и прописал в каждом из них git config --local. Однако в один из жарких летних дней ты напросто забыл сделать это после клонирования очередного 100500 репозитория, поэтому теперь в удаленном репозитории гордо красуется твой коммит с другими креденшиалами. Ты успеваешь исправить все ровно до получения солнечного удара. Во время видения тебе приснился Линус Торвальдс, который пытался что-то да рассказать про конфиги(используя которые тебе не нужно будет каждый раз конфигурировать кренденшиалы)…
+
+Чекпоинты:
+
+    Проверить наличие файла{{ ~/.gitconfig}}(только на Linux системе, файл будет присутствовать, если до этого ты настраивал git config --global). В случае отсутствия можешь создать его сам.
+
+    Настроить .gitconfig так, чтобы он подключал другой конфиг для определенной директории. Ниже мы для всех подпапок и файлов директории ~/innowise/ подключаем конфиг .gitconfig-innowise
+
+[includeIf "gitdir:~/innowise/"]
+	path = ~/.gitconfig-innowise
+
+    Написать сам .gitconfig-innowise. Здесь мы просто добавляем нужные нам креденшиалы.
+
+[user]
+	name = Аркадий Паровозов
+	email = arkadiy_parovozov@innowise-group.com
+
+    Теперь дело за малым. Создай репозиторий внутри директории ~/innowise/, после чего внеси какие-нибудь изменения и закоммить. Если автором коммита является Аркадий Паровозов, то ты справился.
+    
+    
+root@Vostro-3580:/home/sokol/Desktop/git-merge# cd /home/sokol/Desktop/
+root@Vostro-3580:/home/sokol/Desktop# cd ~
+root@Vostro-3580:~# ll | grep .gitconfig 
+-rw-r--r--  1 root root    69 Jan  5 16:48 .gitconfig
+root@Vostro-3580:~# vim .gitconfig 
+root@Vostro-3580:~# ll | grep git 
+-rw-r--r--  1 root root   134 Jan 22 14:33 .gitconfig
+root@Vostro-3580:~# vim .gitconfig-innowise 
+root@Vostro-3580:~# ll | grep git 
+-rw-r--r--  1 root root   134 Jan 22 14:33 .gitconfig
+-rw-r--r--  1 root root    95 Jan 22 14:34 .gitconfig-innowise
+root@Vostro-3580:~# ll | grep innowise
+-rw-r--r--  1 root root    95 Jan 22 14:34 .gitconfig-innowise
+root@Vostro-3580:~# mkdir innowise
+root@Vostro-3580:~# ll
+total 104
+drwx------ 10 root root  4096 Jan 22 14:35  ./
+drwxr-xr-x 20 root root  4096 Dec  1 14:47  ../
+-rw-------  1 root root 24433 Jan 22 12:52  .bash_history
+-rw-r--r--  1 root root  3106 Oct 15  2021  .bashrc
+drwx------  5 root root  4096 Jan 20 15:37  .cache/
+drwx------  6 root root  4096 Jan 20 00:47  .config/
+drwx------  2 root root  4096 Jan 20 00:51  Desktop/
+-rw-r--r--  1 root root   134 Jan 22 14:33  .gitconfig
+-rw-r--r--  1 root root    95 Jan 22 14:34  .gitconfig-innowise
+drwx------  3 root root  4096 Jan 20 00:47 'GOG Games'/
+drwxr-xr-x  2 root root  4096 Jan 22 14:35  innowise/
+-rw-------  1 root root    20 Jan 22 14:10  .lesshst
+drwxr-xr-x  3 root root  4096 Dec  7 17:07  .local/
+-rw-r--r--  1 root root   161 Jul  9  2019  .profile
+drwx------  8 root root  4096 Dec 19 15:34  snap/
+drwx------  2 root root  4096 Jan 22 14:20  .ssh/
+-rw-r--r--  1 root root     0 Dec 19 11:41  .sudo_as_admin_successful
+-rw-------  1 root root 15124 Jan 22 14:34  .viminfo
+root@Vostro-3580:~# cd innowise/
+root@Vostro-3580:~/innowise# git init repo
+hint: Using 'master' as the name for the initial branch. This default branch name
+hint: is subject to change. To configure the initial branch name to use in all
+hint: of your new repositories, which will suppress this warning, call:
+hint: 
+hint: 	git config --global init.defaultBranch <name>
+hint: 
+hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+hint: 'development'. The just-created branch can be renamed via this command:
+hint: 
+hint: 	git branch -m <name>
+Initialized empty Git repository in /root/innowise/repo/.git/
+root@Vostro-3580:~/innowise# cd repo
+root@Vostro-3580:~/innowise/repo# vim hi
+root@Vostro-3580:~/innowise/repo# git add hi
+root@Vostro-3580:~/innowise/repo# git commit hi
+[master (root-commit) be7e255] hi commit
+ 1 file changed, 1 insertion(+)
+ create mode 100644 hi
+root@Vostro-3580:~/innowise/repo# git log
+commit be7e25566488be0395431c604b3f47c7e6c076f5 (HEAD -> master)
+Author: Аркадий Паровозов <arkadiy_parovozov@innowise-group.com>
+Date:   Mon Jan 22 14:36:46 2024 +0300
+
+    hi commit
+root@Vostro-3580:~/innowise/repo# 
+
+

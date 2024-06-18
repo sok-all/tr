@@ -1,0 +1,591 @@
+# Task 3.23 Images. Кэширование
+## Description
+
+Используемые технологии:  Linux, Docker
+
+В текущем задании мы сконцентрируемся на способах оптимизации сборки Docker Images. Мы разберем способы оптимизации с точки зрения времени и масштаба.
+
+Рассмотрим возможность ускорения сборки контейнера при помощи кэширования. Кэширование при сборке Docker образов похоже на логику кэширования в базах данных: кэш ускоряет операции при условии, что собираемые нами данные идентичны тем, которые были собраны раньше.
+
+Перечитай предшествующее предложение снова. А сейчас проанализируем работу кэширования в Docker.
+
+Представим, что у нас есть образ, собранный из уже известного нам Dockerfile, но давай добавим в него дополнительные команды, выполнение которых требует времени:
+FROM alpine:latest
+ENV DAEMON_VERSION 1.0.0
+RUN apk update && apk add build-base
+COPY daemon /usr/local/bin/daemon
+COPY config.yml /etc/daemon/config.yml
+
+Соберем образ, замерив время выполнения команды с помощью утилиты time:
+$ time docker build .
+Sending build context to Docker daemon  3.072kB
+Step 1/5 : FROM alpine:latest
+ ---> 965ea09ff2eb
+Step 2/5 : ENV DAEMON_VERSION 1.0.0
+ ---> Running in 6b9dbc99d223
+Removing intermediate container 6b9dbc99d223
+ ---> d7c23ab52552
+Step 3/5 : RUN apk update && apk add build-base
+ ---> Running in f3ffa9b523f2
+fetch http://dl-cdn.alpinelinux.org/alpine/v3.10/main/x86_64/APKINDEX.tar.gz
+fetch http://dl-cdn.alpinelinux.org/alpine/v3.10/community/x86_64/APKINDEX.tar.gz
+v3.10.3-53-g367286011b [http://dl-cdn.alpinelinux.org/alpine/v3.10/main]
+v3.10.3-51-gf4a3cffc34 [http://dl-cdn.alpinelinux.org/alpine/v3.10/community]
+OK: 10339 distinct packages available
+(1/18) Installing binutils (2.32-r0)
+(2/18) Installing libmagic (5.37-r1)
+(3/18) Installing file (5.37-r1)
+(4/18) Installing gmp (6.1.2-r1)
+(5/18) Installing isl (0.18-r0)
+(6/18) Installing libgomp (8.3.0-r0)
+(7/18) Installing libatomic (8.3.0-r0)
+(8/18) Installing libgcc (8.3.0-r0)
+(9/18) Installing mpfr3 (3.1.5-r1)
+(10/18) Installing mpc1 (1.1.0-r0)
+(11/18) Installing libstdc++ (8.3.0-r0)
+(12/18) Installing gcc (8.3.0-r0)
+(13/18) Installing musl-dev (1.1.22-r3)
+(14/18) Installing libc-dev (0.7.1-r0)
+(15/18) Installing g++ (8.3.0-r0)
+(16/18) Installing make (4.2.1-r2)
+(17/18) Installing fortify-headers (1.1-r0)
+(18/18) Installing build-base (0.5-r1)
+Executing busybox-1.30.1-r2.trigger
+OK: 163 MiB in 32 packages
+Removing intermediate container f3ffa9b523f2
+ ---> e1ced7396dac
+Step 4/5 : COPY daemon /usr/local/bin/daemon
+ ---> 3867820d75f0
+Step 5/5 : COPY config.yml /etc/daemon/config.yml
+ ---> 8f5f62531cde
+Successfully built 8f5f62531cde
+
+real    0m53.097s
+user    0m0.055s
+sys     0m0.071s
+
+Получилось — 53 секунды.
+
+Отлично, теперь представим, что эти зависимости возникают каждый раз, когда требуется собрать образ. Очень много времени тратится только на пакеты. Нерациональное использование времени, правда?
+
+В этом случае нам необходимо кэширование — возможность экономить время сборки новых образов на основе тех образов, которые мы уже собирали. Действительно, зачем нам заново загружать пакеты, если они уже есть в ранее собранном образе? Для того, чтобы не повторять действия, которые занимают много времени, можно воспользоваться старым образом как кэшем и тогда не нужно будет тратить время на сборку новых образов.
+
+Для того, чтобы использовать кэш, нужно передать параметр --cache-from для команды docker build, передав ей имя образа. Это можно сделать по имени образа или его ID.
+
+Так, к примеру, если мы повторим нашу сборку, но воспользуемся предыдущим образом, то получим следующее:
+$ time docker build --cache-from 8f5f62531cde .
+Sending build context to Docker daemon  3.072kB
+Step 1/5 : FROM alpine:latest
+ ---> 965ea09ff2eb
+Step 2/5 : ENV DAEMON_VERSION 1.0.0
+ ---> Using cache
+ ---> d7c23ab52552
+Step 3/5 : RUN apk update && apk add build-base
+ ---> Using cache
+ ---> e1ced7396dac
+Step 4/5 : COPY daemon /usr/local/bin/daemon
+ ---> Using cache
+ ---> 3867820d75f0
+Step 5/5 : COPY config.yml /etc/daemon/config.yml
+ ---> Using cache
+ ---> 8f5f62531cde
+Successfully built 8f5f62531cde
+
+real    0m0.133s
+user    0m0.046s
+sys     0m0.029s
+
+Получилось — 0.1 секунды. То, что нужно!
+
+Как мы видим, ID слоев в первой и второй сборке у нас абсолютно одинаковые, мы ничего не меняли. А если воспользуемся docker images, то увидим, что и нового образа в результате сборки мы не создали!
+
+Так, замечательно, теперь поменяем файл config.yml и повторим сборку с кэшем:
+$ echo test > config.yml
+$ time docker build --cache-from 8f5f62531cde .
+Sending build context to Docker daemon  3.584kB
+Step 1/5 : FROM alpine:latest
+ ---> 965ea09ff2eb
+Step 2/5 : ENV DAEMON_VERSION 1.0.0
+ ---> Using cache
+ ---> d7c23ab52552
+Step 3/5 : RUN apk update && apk add build-base
+ ---> Using cache
+ ---> e1ced7396dac
+Step 4/5 : COPY daemon /usr/local/bin/daemon
+ ---> Using cache
+ ---> 3867820d75f0
+Step 5/5 : COPY config.yml /etc/daemon/config.yml
+ ---> cce5065cbac3
+Successfully built cce5065cbac3
+
+real    0m0.565s
+user    0m0.037s
+sys     0m0.044s
+
+Получилось — 0.5 секунды! Везде, кроме последнего шага с другим ID, использовался кэш. И в выводе команды docker images мы увидим, что создали новый образ.
+
+Пойдем дальше: поменяем файл daemon и посмотрим, что будет при использовании кэша из самого первого образа:
+$ echo test2 > daemon
+$ time docker build --cache-from 8f5f62531cde .
+Sending build context to Docker daemon  4.096kB
+Step 1/5 : FROM alpine:latest
+ ---> 965ea09ff2eb
+Step 2/5 : ENV DAEMON_VERSION 1.0.0
+ ---> Using cache
+ ---> d7c23ab52552
+Step 3/5 : RUN apk update && apk add build-base
+ ---> Using cache
+ ---> e1ced7396dac
+Step 4/5 : COPY daemon /usr/local/bin/daemon
+ ---> a3eb166a9e4c
+Step 5/5 : COPY config.yml /etc/daemon/config.yml
+ ---> 491264024729
+Successfully built 491264024729
+
+real    0m1.872s
+user    0m0.038s
+sys     0m0.025s
+
+Как мы видим, теперь поменялись два слоя и у нас получился новый образ!
+
+Хорошо, теперь посмотрим, что будет, если мы соберем образ, используя в роли кэша второй образ, где изменялся файл config.yml - будет ли на этом шаге использоваться кэш?
+$ time docker build --cache-from cce5065cbac3 .
+Sending build context to Docker daemon  4.096kB
+Step 1/5 : FROM alpine:latest
+ ---> 965ea09ff2eb
+Step 2/5 : ENV DAEMON_VERSION 1.0.0
+ ---> Using cache
+ ---> d7c23ab52552
+Step 3/5 : RUN apk update && apk add build-base
+ ---> Using cache
+ ---> e1ced7396dac
+Step 4/5 : COPY daemon /usr/local/bin/daemon
+ ---> 7b71ef3b5ad8
+Step 5/5 : COPY config.yml /etc/daemon/config.yml
+ ---> 7f92833181fc
+Successfully built 7f92833181fc
+
+real    0m1.292s
+user    0m0.041s
+sys     0m0.021s
+
+Мы видим, что ответ — нет, не будет использоваться. Это связано с тем, что кэширование идет по восходящей: от нижнего, раннего, слоя — к верхнему, позднему, слою. Поэтому кэш верхних слоев не используется, если изменился слой ниже.
+
+Какие условия должны быть соблюдены, чтобы кэш сработал?
+
+    Нижние слои должны быть одинаковыми.
+
+    Копируемые файлы и выставляемые значения должны быть одинаковыми в нижних слоях.
+
+Теперь определим, что может инвалидировать кэш, то есть заставить игнорировать команды:
+
+    COPY — мы копируем измененный файл вместо существующего.
+
+    ENV — мы выставляем другую переменную.
+
+    ARG — в связке с другими командами, например, ENV или RUN, поскольку исполняемые команды меняются из-за аргументов.
+
+    Изменение любой команды или последовательностей команд в Dockerfile.
+
+А теперь рассмотрим подробно, почему это работает именно так:
+
+Итак, каждый слой у нас — это срез состояния файловой системы, а точнее, дельта относительно предыдущего слоя. У каждого слоя высчитывается контрольная сумма файловой системы в конце его сборки, т.е. хеш, с привязкой ко времени. В ходе сборки с кэшированием сборщик проверяет параметры, чтобы понять, можно ли использовать слой из кэша или нет. Вот эти параметры:
+
+    Выполняемая директива прямо сравнивает строки. Например, RUN, где у нас не копируются внешние файлы. При условии, что команда не использует переменных из ARG.
+
+    Хеши файлов. Это касается директив COPY и ADD: если хеш файла отличается, то кэш из старого образа не используется.
+
+На самом деле, второе условие по своей сути сводится к первому. Это отлично заметно по docker history. Посмотрим на два первых собранных нами образа:
+$ docker history 8f5f62531cde
+IMAGE               CREATED             CREATED BY                                      SIZE                COMMENT
+8f5f62531cde        25 minutes ago      /bin/sh -c #(nop) COPY file:45b18160e6353231…   0B
+3867820d75f0        25 minutes ago      /bin/sh -c #(nop) COPY file:7c185a9a7817592d…   0B
+e1ced7396dac        25 minutes ago      /bin/sh -c apk update && apk add build-base     163MB
+d7c23ab52552        26 minutes ago      /bin/sh -c #(nop)  ENV DAEMON_VERSION=1.0.0     0B
+965ea09ff2eb        4 weeks ago         /bin/sh -c #(nop)  CMD ["/bin/sh"]              0B
+<missing>           4 weeks ago         /bin/sh -c #(nop) ADD file:fe1f09249227e2da2…   5.55MB
+$ docker history cce5065cbac3
+IMAGE               CREATED             CREATED BY                                      SIZE                COMMENT
+cce5065cbac3        17 minutes ago      /bin/sh -c #(nop) COPY file:72017e66e68f2ded…   5B
+3867820d75f0        26 minutes ago      /bin/sh -c #(nop) COPY file:7c185a9a7817592d…   0B
+e1ced7396dac        26 minutes ago      /bin/sh -c apk update && apk add build-base     163MB
+d7c23ab52552        27 minutes ago      /bin/sh -c #(nop)  ENV DAEMON_VERSION=1.0.0     0B
+965ea09ff2eb        4 weeks ago         /bin/sh -c #(nop)  CMD ["/bin/sh"]              0B
+<missing>           4 weeks ago         /bin/sh -c #(nop) ADD file:fe1f09249227e2da2…   5.55MB
+
+Как мы видим, команды в последних слоях разные, это позволяет Docker определить, что следующий этап отличается, а значит, кэширование использовать нельзя. Последовательность директив — снизу вверх.
+
+Теперь давайте рассмотрим, в каких случаях бывает необходимо собирать образы без кэша и как это сделать.
+
+Итак, при текущем состоянии, если мы запустим сборку без параметров кэширования, то получим следующее:
+$ docker build .
+Sending build context to Docker daemon  4.096kB
+Step 1/5 : FROM alpine:latest
+ ---> 965ea09ff2eb
+Step 2/5 : ENV DAEMON_VERSION 1.0.0
+ ---> Using cache
+ ---> d7c23ab52552
+Step 3/5 : RUN apk update && apk add build-base
+ ---> Using cache
+ ---> e1ced7396dac
+Step 4/5 : COPY daemon /usr/local/bin/daemon
+ ---> Using cache
+ ---> 7b71ef3b5ad8
+Step 5/5 : COPY config.yml /etc/daemon/config.yml
+ ---> Using cache
+ ---> 7f92833181fc
+
+Как мы видим, кэш у нас все равно используется, потому что Docker сам нашел образ, который подходит ему по слоям. Хорошо. Теперь допустим, что образ лежит уже около года, а нам хочется получить актуальные пакеты, которые содержатся в build-base. Так как происходит кэширование, то мы всегда будем получать одно и то же состояние. Для того, чтобы этого избежать, есть два метода:
+
+    удалить образ, который используется для кэширования;
+
+    собрать образ без кэша.
+
+Первый метод простой, опишем второй метод.
+
+Логично предположить, что если у нас есть параметр --cache-from у команды docker build, то у нее же должен быть и параметр, который позволяет НЕ использовать кэш  {{no-cache}}. Посмотрим, как соберется у нас образ с параметром {{-no-cache}}:
+$ time docker build --no-cache .
+Sending build context to Docker daemon  4.096kB
+Step 1/5 : FROM alpine:latest
+ ---> 965ea09ff2eb
+Step 2/5 : ENV DAEMON_VERSION 1.0.0
+ ---> Running in f87e03df5c75
+Removing intermediate container f87e03df5c75
+ ---> 31aba3fd7693
+Step 3/5 : RUN apk update && apk add build-base
+ ---> Running in c4072a5b64c9
+fetch http://dl-cdn.alpinelinux.org/alpine/v3.10/main/x86_64/APKINDEX.tar.gz
+fetch http://dl-cdn.alpinelinux.org/alpine/v3.10/community/x86_64/APKINDEX.tar.gz
+v3.10.3-53-g367286011b [http://dl-cdn.alpinelinux.org/alpine/v3.10/main]
+v3.10.3-51-gf4a3cffc34 [http://dl-cdn.alpinelinux.org/alpine/v3.10/community]
+OK: 10339 distinct packages available
+(1/18) Installing binutils (2.32-r0)
+(2/18) Installing libmagic (5.37-r1)
+(3/18) Installing file (5.37-r1)
+(4/18) Installing gmp (6.1.2-r1)
+(5/18) Installing isl (0.18-r0)
+(6/18) Installing libgomp (8.3.0-r0)
+(7/18) Installing libatomic (8.3.0-r0)
+(8/18) Installing libgcc (8.3.0-r0)
+(9/18) Installing mpfr3 (3.1.5-r1)
+(10/18) Installing mpc1 (1.1.0-r0)
+(11/18) Installing libstdc++ (8.3.0-r0)
+(12/18) Installing gcc (8.3.0-r0)
+(13/18) Installing musl-dev (1.1.22-r3)
+(14/18) Installing libc-dev (0.7.1-r0)
+(15/18) Installing g++ (8.3.0-r0)
+(16/18) Installing make (4.2.1-r2)
+(17/18) Installing fortify-headers (1.1-r0)
+(18/18) Installing build-base (0.5-r1)
+Executing busybox-1.30.1-r2.trigger
+OK: 163 MiB in 32 packages
+Removing intermediate container c4072a5b64c9
+ ---> 1d3f688be243
+Step 4/5 : COPY daemon /usr/local/bin/daemon
+ ---> e95d27d30117
+Step 5/5 : COPY config.yml /etc/daemon/config.yml
+ ---> 723b1a638b9e
+Successfully built 723b1a638b9e
+
+real    0m54.419s
+user    0m0.077s
+sys     0m0.065s
+
+В итоге, мы имеем новый образ, который собирался 54 секунды, но уже с новыми пакетами, как мы и хотели.
+
+Кэширование — один из важнейших механизмов, позволяющих ускорить сборку пакетов за счет образов, которые мы уже собирали в прошлом. Кэширование играет важную роль в процессе Continious Integration.
+
+
+## Чекпоинты:
+
+    Используя Dockerfile, приведённый ниже
+
+FROM alpine:latest
+ARG MYARG
+RUN apk update && apk add build-base
+
+    Выполни сборку образа, с именем cache:1
+root@Vostro-3580:/home/sokol/3-23# time docker build . -t cache:1 
+[+] Building 2.2s (6/6) FINISHED                                                          docker:default
+ => [internal] load build definition from Dockerfile                                                0.0s
+ => => transferring dockerfile: 103B                                                                0.0s
+ => [internal] load .dockerignore                                                                   0.0s
+ => => transferring context: 2B                                                                     0.0s
+ => [internal] load metadata for docker.io/library/alpine:latest                                    2.1s
+ => [1/2] FROM docker.io/library/alpine:latest@sha256:c5b1261d6d3e43071626931fc004f70149baeba2c8ec  0.0s
+ => CACHED [2/2] RUN apk update && apk add build-base                                               0.0s
+ => exporting to image                                                                              0.0s
+ => => exporting layers                                                                             0.0s
+ => => writing image sha256:f7926807d741aed9a167135c2dc606f22c7909e9dc18b1f73414035d10d34988        0.0s
+ => => naming to docker.io/library/cache:1                                                          0.0s
+
+real	0m2.455s
+user	0m0.195s
+sys	0m0.096s
+
+    Повтори команду, но для имени образа используйте cache:2.
+root@Vostro-3580:/home/sokol/3-23# time docker build . -t cache:2 
+[+] Building 2.1s (6/6) FINISHED                                                          docker:default
+ => [internal] load .dockerignore                                                                   0.0s
+ => => transferring context: 2B                                                                     0.0s
+ => [internal] load build definition from Dockerfile                                                0.0s
+ => => transferring dockerfile: 103B                                                                0.0s
+ => [internal] load metadata for docker.io/library/alpine:latest                                    2.0s
+ => [1/2] FROM docker.io/library/alpine:latest@sha256:c5b1261d6d3e43071626931fc004f70149baeba2c8ec  0.0s
+ => CACHED [2/2] RUN apk update && apk add build-base                                               0.0s
+ => exporting to image                                                                              0.0s
+ => => exporting layers                                                                             0.0s
+ => => writing image sha256:f7926807d741aed9a167135c2dc606f22c7909e9dc18b1f73414035d10d34988        0.0s
+ => => naming to docker.io/library/cache:2                                                          0.0s
+
+real	0m2.348s
+user	0m0.161s
+sys	0m0.083s
+
+    Повтори команду, с использованием флага --no-cache
+root@Vostro-3580:/home/sokol/3-23# time docker build . -t cache:2 --no-cache
+[+] Building 100.0s (6/6) FINISHED                                                        docker:default
+ => [internal] load .dockerignore                                                                   0.0s
+ => => transferring context: 2B                                                                     0.0s
+ => [internal] load build definition from Dockerfile                                                0.0s
+ => => transferring dockerfile: 103B                                                                0.0s
+ => [internal] load metadata for docker.io/library/alpine:latest                                    0.8s
+ => CACHED [1/2] FROM docker.io/library/alpine:latest@sha256:c5b1261d6d3e43071626931fc004f70149bae  0.0s
+ => [2/2] RUN apk update && apk add build-base                                                     98.2s
+ => exporting to image                                                                              0.9s 
+ => => exporting layers                                                                             0.9s 
+ => => writing image sha256:45a416ea23795f17f42cfcc54bb0729e41db6505fc9d76e5066bbc3412029330        0.0s 
+ => => naming to docker.io/library/cache:2                                                          0.0s 
+                                                                                                         
+real    1m40.227s                                                                                        
+user	0m0.487s
+sys	0m0.305s
+
+    Сравни скорость выполнения обеих команд, их выводы и ID получившихся слоёв
+
+    Собери образ с именем cache:3. Используй дополнительный флаг --build-arg и установи значение аргумента MYARG=3 (не используй директиву --no-cache).
+root@Vostro-3580:/home/sokol/3-23# time docker build . -t cache:3 --build-arg MYARG=4
+[+] Building 107.8s (6/6) FINISHED                                                        docker:default
+ => [internal] load .dockerignore                                                                   0.0s
+ => => transferring context: 2B                                                                     0.0s
+ => [internal] load build definition from Dockerfile                                                0.0s
+ => => transferring dockerfile: 103B                                                                0.0s
+ => [internal] load metadata for docker.io/library/alpine:latest                                    4.0s
+ => CACHED [1/2] FROM docker.io/library/alpine:latest@sha256:c5b1261d6d3e43071626931fc004f70149bae  0.0s
+ => [2/2] RUN apk update && apk add build-base                                                    102.7s
+ => exporting to image                                                                              0.9s 
+ => => exporting layers                                                                             0.9s 
+ => => writing image sha256:e033a0d171d322e6277b16c3a4d064c81a16beb6c491951d04a23f4b32e1f370        0.0s 
+ => => naming to docker.io/library/cache:3                                                          0.0s 
+                                                                                                         
+real    1m48.106s                                                                                        
+user	0m0.689s
+sys	0m0.348s
+
+    Повтори команду, убедись, что твоя сборка кэширована
+root@Vostro-3580:/home/sokol/3-23# time docker build . -t cache:3 --build-arg MYARG=4
+[+] Building 3.3s (6/6) FINISHED                                                          docker:default
+ => [internal] load .dockerignore                                                                   0.0s
+ => => transferring context: 2B                                                                     0.0s
+ => [internal] load build definition from Dockerfile                                                0.0s
+ => => transferring dockerfile: 103B                                                                0.0s
+ => [internal] load metadata for docker.io/library/alpine:latest                                    3.2s
+ => [1/2] FROM docker.io/library/alpine:latest@sha256:c5b1261d6d3e43071626931fc004f70149baeba2c8ec  0.0s
+ => CACHED [2/2] RUN apk update && apk add build-base                                               0.0s
+ => exporting to image                                                                              0.0s
+ => => exporting layers                                                                             0.0s
+ => => writing image sha256:e033a0d171d322e6277b16c3a4d064c81a16beb6c491951d04a23f4b32e1f370        0.0s
+ => => naming to docker.io/library/cache:3                                                          0.0s
+
+real	0m3.545s
+user	0m0.116s
+sys	0m0.073s
+
+    Собери образ с именем cache:4. Используй дополнительный флаг --build-arg и установи значение аргумента MYARG=4 (не используй директиву --no-cache)
+root@Vostro-3580:/home/sokol/3-23# time docker build . -t cache:4 --build-arg MYARG=4
+[+] Building 1.1s (6/6) FINISHED                                                          docker:default
+ => [internal] load build definition from Dockerfile                                                0.0s
+ => => transferring dockerfile: 103B                                                                0.0s
+ => [internal] load .dockerignore                                                                   0.0s
+ => => transferring context: 2B                                                                     0.0s
+ => [internal] load metadata for docker.io/library/alpine:latest                                    0.9s
+ => [1/2] FROM docker.io/library/alpine:latest@sha256:c5b1261d6d3e43071626931fc004f70149baeba2c8ec  0.0s
+ => CACHED [2/2] RUN apk update && apk add build-base                                               0.0s
+ => exporting to image                                                                              0.0s
+ => => exporting layers                                                                             0.0s
+ => => writing image sha256:e033a0d171d322e6277b16c3a4d064c81a16beb6c491951d04a23f4b32e1f370        0.0s
+ => => naming to docker.io/library/cache:4                                                          0.0s
+
+real	0m1.367s
+user	0m0.127s
+sys	0m0.080s
+
+    Используя команду docker inspect найди твой аргумент
+
+root@Vostro-3580:/home/sokol/3-23# docker inspect cache:4
+[
+    {
+        "Id": "sha256:e033a0d171d322e6277b16c3a4d064c81a16beb6c491951d04a23f4b32e1f370",
+        "RepoTags": [
+            "cache:3",
+            "cache:4"
+        ],
+        "RepoDigests": [],
+        "Parent": "",
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2024-01-30T14:56:39.862491504+03:00",
+        "Container": "",
+        "ContainerConfig": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": null,
+            "Cmd": null,
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "",
+            "Entrypoint": null,
+            "OnBuild": null,
+            "Labels": null
+        },
+        "DockerVersion": "",
+        "Author": "",
+        "Config": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            ],
+            "Cmd": [
+                "/bin/sh"
+            ],
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "",
+            "Entrypoint": null,
+            "OnBuild": null,
+            "Labels": null
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 231881228,
+        "VirtualSize": 231881228,
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/733a56d96b0be0e9f630b5e43173fad5607fd04b8dbc8ddf23699ea93d6bb0cd/diff",
+                "MergedDir": "/var/lib/docker/overlay2/nwqvoyip3bm9lwa3sxqkp8h63/merged",
+                "UpperDir": "/var/lib/docker/overlay2/nwqvoyip3bm9lwa3sxqkp8h63/diff",
+                "WorkDir": "/var/lib/docker/overlay2/nwqvoyip3bm9lwa3sxqkp8h63/work"
+            },
+            "Name": "overlay2"
+        },
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:d4fc045c9e3a848011de66f34b81f052d4f2c15a17bb196d637e526349601820",
+                "sha256:4c74b5bc2587bfe8e41abc9917d647864375f8638ffae0380128418238ae44e3"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2024-01-30T14:58:07.322736216+03:00"
+        }
+    }
+]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  root@Vostro-3580:/home/sokol/3-23# docker images
+REPOSITORY   TAG       IMAGE ID       CREATED          SIZE
+cache        3         e033a0d171d3   21 minutes ago   232MB
+cache        4         e033a0d171d3   21 minutes ago   232MB
+cache        2         45a416ea2379   28 minutes ago   232MB
+cache        1         f7926807d741   49 minutes ago   232MB
+root@Vostro-3580:/home/sokol/3-23# docker history cache:1
+IMAGE          CREATED          CREATED BY                                      SIZE      COMMENT
+f7926807d741   49 minutes ago   RUN |1 MYARG= /bin/sh -c apk update && apk a…   225MB     buildkit.dockerfile.v0
+<missing>      49 minutes ago   ARG MYARG                                       0B        buildkit.dockerfile.v0
+<missing>      3 days ago       /bin/sh -c #(nop)  CMD ["/bin/sh"]              0B        
+<missing>      3 days ago       /bin/sh -c #(nop) ADD file:37a76ec18f9887751…   7.38MB    
+root@Vostro-3580:/home/sokol/3-23# docker history cache:2
+IMAGE          CREATED          CREATED BY                                      SIZE      COMMENT
+45a416ea2379   29 minutes ago   RUN |1 MYARG= /bin/sh -c apk update && apk a…   225MB     buildkit.dockerfile.v0
+<missing>      29 minutes ago   ARG MYARG                                       0B        buildkit.dockerfile.v0
+<missing>      3 days ago       /bin/sh -c #(nop)  CMD ["/bin/sh"]              0B        
+<missing>      3 days ago       /bin/sh -c #(nop) ADD file:37a76ec18f9887751…   7.38MB    
+root@Vostro-3580:/home/sokol/3-23# docker history cache:3
+IMAGE          CREATED          CREATED BY                                      SIZE      COMMENT
+e033a0d171d3   22 minutes ago   RUN |1 MYARG=4 /bin/sh -c apk update && apk …   225MB     buildkit.dockerfile.v0
+<missing>      22 minutes ago   ARG MYARG                                       0B        buildkit.dockerfile.v0
+<missing>      3 days ago       /bin/sh -c #(nop)  CMD ["/bin/sh"]              0B        
+<missing>      3 days ago       /bin/sh -c #(nop) ADD file:37a76ec18f9887751…   7.38MB    
+root@Vostro-3580:/home/sokol/3-23# docker history cache:4
+IMAGE          CREATED          CREATED BY                                      SIZE      COMMENT
+e033a0d171d3   22 minutes ago   RUN |1 MYARG=4 /bin/sh -c apk update && apk …   225MB     buildkit.dockerfile.v0
+<missing>      22 minutes ago   ARG MYARG                                       0B        buildkit.dockerfile.v0
+<missing>      3 days ago       /bin/sh -c #(nop)  CMD ["/bin/sh"]              0B        
+<missing>      3 days ago       /bin/sh -c #(nop) ADD file:37a76ec18f9887751…   7.38MB    
+root@Vostro-3580:/home/sokol/3-23# 
+  
+    
+    
+    
+    

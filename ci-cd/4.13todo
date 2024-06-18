@@ -1,0 +1,143 @@
+глянуть best practices java js mysql
+
+мультистейдж
+****************************************************************************************************
+фронт
+глянуть про yarn перечитать ридми 
+
+последний стейдж: nginx обслуживает сгенереный ранее файл с родным nginx.conf 
+
+https://github.com/facebook/create-react-app
+
+https://devops-gitlab.inno.ws/devops-board/java-js-mysql/-/tree/master/frontend
+ридми^
+-------------------------------------------------------------------------
+бэк
+с божьей помощью собрать этот мвн
+
+****************************************************************************************************
+compose 
+
+фронт бд бэк(к бд) 
+Обновить application.properties (порт пароль и тд)
+сделать и подрубить .env
+(писала сразу в компоузе)
+
+****************************************************************************************************
+проброс портов
+
+ограничить доступ пользователям к бд и бэку
+
+****************************************************************************************************
+healthcheks
+
+изучить что оно такое есть и как делать
+бэк от бд, фронт от бэка
+
+****************************************************************************************************
+сети
+
+отдельно фронт и бд
+подрубить бэк к обеим сеткам (доступ и из фронта и из бд)
+фронт и бд не имеют прямого доступа
+фронт <-> бэк <-> бд
+
+***************************************************************************************************
+тесты
+
+студенты должны добавляться кнопкой sumbit,
+при обновлении страницы внизу должен отображаться список с добавленными студентами и их id.
+
+че надо вообще 
+
+***************************************************************************************************
+
+
+чит щщиттт
+
+https://devops-gitlab.inno.ws/devops-board/java-js-mysql-ready
+https://devops-gitlab.inno.ws/yan.shlykov/DevOpsTasks/
+
+dot
+
+3.24 multistage
+
+3.26 awesome compose
+https://github.com/docker/awesome-compose
+
+.
+├── 4.13.md
+└── java-js-mysql
+    ├── backend
+    │   ├── Dockerfile
+    │   ├── mvnw
+    │   ├── mvnw.cmd
+    │   ├── pom.xml
+    │   └── src
+    │       └── main
+    │           ├── java
+    │           │   └── com
+    │           │       └── arjuncodes
+    │           │           └── studentsystem
+    │           │               ├── controller
+    │           │               │   └── StudentController.java
+    │           │               ├── model
+    │           │               │   └── Student.java
+    │           │               ├── repository
+    │           │               │   └── StudentRepository.java
+    │           │               ├── service
+    │           │               │   ├── StudentServiceImpl.java
+    │           │               │   └── StudentService.java
+    │           │               └── StudentsystemApplication.java
+    │           └── resources
+    │               └── application.properties
+    └── frontend
+        ├── Dockerfile
+        ├── package.json
+        ├── package-lock.json
+        ├── public
+        │   ├── favicon.ico
+        │   ├── index.html
+        │   ├── logo192.png
+        │   ├── logo512.png
+        │   ├── manifest.json
+        │   └── robots.txt
+        ├── README.md
+        └── src
+            ├── App.css
+            ├── App.js
+            ├── App.test.js
+            ├── components
+            │   ├── Appbar.js
+            │   └── Student.js
+            ├── index.css
+            ├── index.js
+            ├── logo.svg
+            ├── reportWebVitals.js
+            └── setupTests.js
+
+
+
+
+// Dockerfile js
+
+# ==== CONFIGURE =====
+# Use a Node 16 base image
+FROM node:16-alpine AS builder
+# Set the working directory to /app inside the container
+WORKDIR /app
+# Copy app files
+COPY . .
+# ==== BUILD =====
+# Install dependencies (npm ci makes sure the exact versions in the lockfile gets installed)
+RUN npm ci 
+# Build the app
+RUN npm run build
+# ==== RUN =======
+# Set the env to "production"
+ENV NODE_ENV production
+# Expose the port on which the app will be running (3000 is the default that `serve` uses)
+EXPOSE 3000
+# Start the app
+CMD [ "npx", "serve", "build" ]
+

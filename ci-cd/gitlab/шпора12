@@ -1,0 +1,169 @@
+ROM python:3.8-alpine
+
+WORKDIR /app
+
+COPY requirements.txt requirements.txt
+
+RUN pip3 install werkzeug===2.2.2 && \ 
+
+    pip3 install -r requirements.txt
+
+COPY . .
+
+CMD [ "flask", "run","--host","0.0.0.0","--port","5000"]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
+
+
+
+https://docs.gitlab.com/ee/ci/docker/using_docker_build.html
+
+
+
+
+
+https://docs.gitlab.com/ee/ci/variables/
+
+
+
+
+https://docs.gitlab.com/runner/install/docker.html
+
+
+
+
+https://habr.com/ru/companies/softmart/articles/309102/
+
+
+
+
+
+
+
+
+
+
+default:
+
+  image: docker:24.0.5
+
+  services:
+
+    - docker:24.0.5-dind
+
+variables:
+
+  DOCKER_IMAGE_NAME: "flask-ping-pong-app"
+
+  DOCKER_IMAGE_TAG: $CI_COMMIT_SHA
+
+  #DOCKER_HOST: tcp://docker:2375/
+
+  DOCKER_DRIVER: overlay2
+
+  DOCKER_TLS_CERTDIR: ""
+
+before_script:
+
+ - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+
+stages:
+
+  - build
+
+  - test
+
+  - deploy
+
+build:
+
+  stage: build
+
+  script:
+
+    - docker pull $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest || true
+
+    - docker build -t devops-registry.inno.ws/devops-tasks-group/devops-task-python-first-pipeline/$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG .
+
+    - docker push devops-registry.inno.ws/devops-tasks-group/devops-task-python-first-pipeline/$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG
+
+test:
+
+  stage: test  
+
+  needs:
+
+    - job: build
+
+      artifacts: true
+
+  script:
+
+    - docker pull devops-registry.inno.ws/devops-tasks-group/devops-task-python-first-pipeline/$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG
+
+    - docker run -p 5000:5000 devops-registry.inno.ws/devops-tasks-group/devops-task-python-first-pipeline/$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG python -m unittest tests/test_app.py
+
+deploy:
+
+  stage: deploy  
+
+  needs:
+
+    - job: build
+
+      artifacts: true
+
+  script:
+
+    - docker pull devops-registry.inno.ws/devops-tasks-group/devops-task-python-first-pipeline/$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG
+
+    - docker run -d -p 5000:5000 devops-registry.inno.ws/devops-tasks-group/devops-task-python-first-pipeline/$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG
+
+
+
+
+
+
+
+
+
+
+st_app.py
+339 bytes
+
+import unittest
+
+from app import app
+
+class TestApp(unittest.TestCase):
+
+    def test_hello(self):
+
+        tester = app.test_client(self)
+
+        response = tester.get('/')
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(response.data, b'Hello, World!')
+
+        
+
+if __name__ == '__main__':
+
+    unittest.main()
+

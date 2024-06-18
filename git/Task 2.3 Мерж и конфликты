@@ -1,0 +1,116 @@
+2.3
+
+    Объедини ветку develop с веткой master из предыдущего задания. Запушь ветку в удаленный репозиторий.
+
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# git merge develop
+Updating 155d213..1acff35
+Fast-forward
+ nginx.conf | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+ mode change 100644 => 100755 nginx.conf
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# git push gitlab master
+Total 0 (delta 0), reused 0 (delta 0), pack-reused 0
+To ssh://devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task1.git
+   155d213..1acff35  master -> master
+   
+
+--------------------------------------------------------------------------------------------------------
+   
+    Клонируй репозиторий: git-merge. Смержи ветку feature в ветку develop, устранив конфликты. При разрешении конфликта нужно выбрать последнее по времени изменение в ветках develop и feature по выводу git log.
+
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git merge origin/feature
+Auto-merging main.go
+CONFLICT (content): Merge conflict in main.go
+Automatic merge failed; fix conflicts and then commit the result.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git mergetool
+Normal merge conflict for 'main.go':
+  {local}: modified file
+  {remote}: modified file
+Hit return to start merge resolution tool (meld): 
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git merge origin/feature
+fatal: You have not concluded your merge (MERGE_HEAD exists).
+Please, commit your changes before you merge.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git add --all
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git commit -a
+[develop 02404e0] Merge remote-tracking branch 'origin/feature' into develop solved merge conflict
+
+
+----------------------------------------------------------------------------------------------------------
+
+
+ Смержи получившуюся ветку develop в ветку master. При разрешении конфликта нужно выбрать последнее по времени изменение в ветках develop и master, исключая при сравнении времени только что сделанный merge коммит, который появился в ветке develop после выполнения шага 2.
+
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git checkout master
+Switched to branch 'master'
+Your branch is up to date with 'origin/master'.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git merge develop
+Auto-merging main.go
+CONFLICT (content): Merge conflict in main.go
+Automatic merge failed; fix conflicts and then commit the result.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git mergetool
+Merging:
+main.go
+
+Normal merge conflict for 'main.go':
+  {local}: modified file
+  {remote}: modified file
+Hit return to start merge resolution tool (meld): 
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git add --all
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git merge develop
+fatal: You have not concluded your merge (MERGE_HEAD exists).
+Please, commit your changes before you merge.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git commit -a
+[master 07aa3df] Merge branch 'develop' solved merge conflict
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+
+
+    Смержи получившуюся ветку develop в ветку master. При разрешении конфликта нужно выбрать последнее по времени изменение в ветках develop и master, исключая при сравнении времени только что сделанный merge коммит, который появился в ветке develop после выполнения шага 2.
+
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git checkout master
+Switched to branch 'master'
+Your branch is up to date with 'origin/master'.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git merge develop
+Auto-merging main.go
+CONFLICT (content): Merge conflict in main.go
+Automatic merge failed; fix conflicts and then commit the result.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git mergetool
+
+This message is displayed because 'merge.tool' is not configured.
+See 'git mergetool --tool-help' or 'git help config' for more details.
+'git mergetool' will now attempt to use one of the following tools:
+opendiff kdiff3 tkdiff xxdiff meld tortoisemerge gvimdiff diffuse diffmerge ecmerge p4merge araxis bc codecompare smerge emerge vimdiff nvimdiff
+Merging:
+main.go
+
+Normal merge conflict for 'main.go':
+  {local}: modified file
+  {remote}: modified file
+Hit return to start merge resolution tool (meld): 
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git add --all
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git merge develop
+fatal: You have not concluded your merge (MERGE_HEAD exists).
+Please, commit your changes before you merge.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git commit -a
+[master 07aa3df] Merge branch 'develop' solved merge conflict
+
+-------------------------------------------------------------------------------------------------------------------
+
+
+    Создай в своем аккаунте в gitlab репозиторий devops-task-merge и загрузи все изменения в него.
+    
+    root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-merge# git push gitlab-merge
+Enumerating objects: 13, done.
+Counting objects: 100% (13/13), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (8/8), done.
+Writing objects: 100% (9/9), 1.11 KiB | 1.11 MiB/s, done.
+Total 9 (delta 3), reused 5 (delta 1), pack-reused 0
+remote: 
+remote: To create a merge request for master, visit:
+remote:   https://devops-gitlab.inno.ws/alexandra.sokol/devops-task-merge1/-/merge_requests/new?merge_request%5Bsource_branch%5D=master
+remote: 
+To ssh://devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task-merge1.git
+ * [new branch]      master -> master
+

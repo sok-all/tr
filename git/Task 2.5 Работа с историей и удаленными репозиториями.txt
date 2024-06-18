@@ -1,0 +1,200 @@
+Task 2.5 Работа с историей и удаленными репозиториями
+
+    Клонируй репозиторий: git-squash. Создай в своем аккаунте репозиторий devops-task-force. Залей весь репозиторий git-squash в devops-task-force. После этого в ветке develop используй squash для объединения всех коммитов в один. После этого попробуй выполнить git push в ваш репозиторий. Сохрани текст ошибки. Выполни git push --force в ваш репозиторий.
+ 
+root@Vostro-3580:/home/sokol/Desktop# git clone ssh://git@devops-gitlab.inno.ws:54042/devops-board/git-squash.git
+Cloning into 'git-squash'...
+remote: Enumerating objects: 24, done.
+remote: Total 24 (delta 0), reused 0 (delta 0), pack-reused 24
+Receiving objects: 100% (24/24), done.
+Resolving deltas: 100% (6/6), done.
+root@Vostro-3580:/home/sokol/Desktop# cd git-squash/
+root@Vostro-3580:/home/sokol/Desktop/git-squash# cat README.md 
+Squash
+=======
+
+Simple repo to show how rebase works
+We have 2 branches here:
+- master
+- develop
+
+You can find a lot of similar commits in develop branch. You have to squash them into 1 single commit.
+root@Vostro-3580:/home/sokol/Desktop/git-squash# git remote add force ssh://git@devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task-force.git
+root@Vostro-3580:/home/sokol/Desktop/git-squash# git push --all force
+Enumerating objects: 6, done.
+Counting objects: 100% (6/6), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (5/5), done.
+Writing objects: 100% (6/6), 984 bytes | 984.00 KiB/s, done.
+Total 6 (delta 0), reused 6 (delta 0), pack-reused 0
+To ssh://devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task-force.git
+ * [new branch]      master -> master
+ 
+root@Vostro-3580:/home/sokol/Desktop/git-squash# git checkout develop
+Branch 'develop' set up to track remote branch 'develop' from 'origin'.
+Switched to a new branch 'develop'
+root@Vostro-3580:/home/sokol/Desktop/git-squash# git push --all force
+Enumerating objects: 20, done.
+Counting objects: 100% (20/20), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (12/12), done.
+Writing objects: 100% (18/18), 1.62 KiB | 1.62 MiB/s, done.
+Total 18 (delta 6), reused 18 (delta 6), pack-reused 0
+remote: 
+remote: To create a merge request for develop, visit:
+remote:   https://devops-gitlab.inno.ws/alexandra.sokol/devops-task-force/-/merge_requests/new?merge_request%5Bsource_branch%5D=develop
+remote: 
+To ssh://devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task-force.git
+ * [new branch]      develop -> develop
+root@Vostro-3580:/home/sokol/Desktop/git-squash# git log
+commit d658f11d681ac7d56d235404006d8a508309824b (HEAD -> develop, origin/develop, force/develop)
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:19:53 2019 +0300
+
+    Fix #5 Final!!!
+
+commit c8957ccaa1be0086f0b72dc7af4bea7caea274b2
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:19:37 2019 +0300
+
+    Fix #4
+
+commit 1346f7fa995f150a17c4eb2d5e47d9cf9d365041
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:19:30 2019 +0300
+
+    Fix #3
+
+commit ab12f7e32d4e385a2990b3a29969baee373c6f42
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:19:22 2019 +0300
+
+    Fix #2
+
+commit 847d11d029c58b6ea7ef9ca99cd934491b8f4059
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:19:08 2019 +0300
+
+    Fix #1
+
+commit a452cc074f6ababad226a3eb81523ee00a8b5ef0
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:18:46 2019 +0300
+
+    Simplified sum function
+
+commit 721bbd4f31fc999e99715817e4891029d4744f73 (origin/show, origin/master, origin/HEAD, force/master, master)
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:18:14 2019 +0300
+
+    Added main server file
+
+commit d2594d0acbde89b979f9d54809a2c956f7df9dff
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:17:44 2019 +0300
+
+    Initial commit
+
+root@Vostro-3580:/home/sokol/Desktop/git-squash# git rebase -i HEAD~7
+[detached HEAD 4cb365b] Added main server file
+ Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+ Date: Wed Jan 9 02:18:14 2019 +0300
+ 1 file changed, 44 insertions(+)
+ create mode 100644 main.go
+Successfully rebased and updated refs/heads/develop.
+root@Vostro-3580:/home/sokol/Desktop/git-squash# git log
+commit 4cb365bf76560138a6ff2a4a668d07e1492cbb2b (HEAD -> develop)
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:18:14 2019 +0300
+
+    Added main server file
+    
+    Simplified sum function
+    
+    Fix #1
+    
+    Fix #2
+    
+    Fix #3
+    
+    Fix #4
+    
+    Fix #5 Final!!!
+
+commit d2594d0acbde89b979f9d54809a2c956f7df9dff
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:17:44 2019 +0300
+
+    Initial commit
+
+
+root@Vostro-3580:/home/sokol/Desktop/git-squash# git push force
+To ssh://devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task-force.git
+ ! [rejected]        develop -> develop (non-fast-forward)
+error: failed to push some refs to 'ssh://devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task-force.git'
+hint: Updates were rejected because the tip of your current branch is behind
+hint: its remote counterpart. Integrate the remote changes (e.g.
+hint: 'git pull ...') before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+root@Vostro-3580:/home/sokol/Desktop/git-squash# git push --force force
+Enumerating objects: 4, done.
+Counting objects: 100% (4/4), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 727 bytes | 727.00 KiB/s, done.
+Total 3 (delta 0), reused 1 (delta 0), pack-reused 0
+remote: 
+remote: To create a merge request for develop, visit:
+remote:   https://devops-gitlab.inno.ws/alexandra.sokol/devops-task-force/-/merge_requests/new?merge_request%5Bsource_branch%5D=develop
+remote: 
+To ssh://devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task-force.git
+ + d658f11...4cb365b develop -> develop (forced update)
+root@Vostro-3580:/home/sokol/Desktop/git-squash# 
+
+------------------------------------------------------------------------------------------
+
+    Клонируй репозиторий: git-rebase. Создай новый репозиторий у себя на gitlab и запушь туда репозиторий. Создай 2 pull requests: из ветки feature в develop и из ветки develop в master.
+root@Vostro-3580:/home/sokol/Desktop# git clone ssh://git@devops-gitlab.inno.ws:54042/devops-board/git-rebase.git
+Cloning into 'git-rebase'...
+remote: Enumerating objects: 18, done.
+remote: Counting objects: 100% (18/18), done.
+remote: Compressing objects: 100% (17/17), done.
+remote: Total 18 (delta 6), reused 0 (delta 0), pack-reused 0
+Receiving objects: 100% (18/18), done.
+Resolving deltas: 100% (6/6), done.
+root@Vostro-3580:/home/sokol/Desktop# cd git-rebase/
+root@Vostro-3580:/home/sokol/Desktop/git-rebase# git remote add rebase2.5 ssh://git@devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task-rebase2.5.git
+root@Vostro-3580:/home/sokol/Desktop/git-rebase# git checkout feature
+Branch 'feature' set up to track remote branch 'feature' from 'origin'.
+Switched to a new branch 'feature'
+root@Vostro-3580:/home/sokol/Desktop/git-rebase# git push --all rebase2.5
+Enumerating objects: 4, done.
+Counting objects: 100% (4/4), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 471 bytes | 471.00 KiB/s, done.
+Total 3 (delta 0), reused 3 (delta 0), pack-reused 0
+remote: 
+remote: To create a merge request for feature, visit:
+remote:   https://devops-gitlab.inno.ws/alexandra.sokol/devops-task-rebase2.5/-/merge_requests/new?merge_request%5Bsource_branch%5D=feature
+remote: 
+To ssh://devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task-rebase2.5.git
+ * [new branch]      feature -> feature
+
+******************screeenshot***************************
+
+
+    Клонируй репозиторий: git-merge. Создай новый репозиторий у себя на gitlab и загрузи туда репозиторий. Создай pull request из ветки feature в ветку develop. Посмотри, как отображаются конфликты в интерфейсе gitlab.
+root@Vostro-3580:/home/sokol/Desktop/git-merge# git push --all merge2.5
+Enumerating objects: 12, done.
+Counting objects: 100% (12/12), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (9/9), done.
+Writing objects: 100% (12/12), 1.55 KiB | 1.55 MiB/s, done.
+Total 12 (delta 2), reused 12 (delta 2), pack-reused 0
+To ssh://devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task-merge2.5.git
+ * [new branch]      master -> master
+
+    Выполни fork репозитория git-checkout. Переключись в ветку feature и добавь в нее новый файл с интересной информацией отдельным коммитом. Создай pull request в основной проект: git-checkout
+    
+    скрины

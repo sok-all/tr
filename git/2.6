@@ -1,0 +1,79 @@
+Task 2.6 Submodules
+Description
+
+Используемые технологии:  Linux, Git
+
+Представим, что ты разрабатываешь Wordpress сайт, который состоит из:
+
+    Плагинов и твоего личного кода, которые и образуют этот сайт.
+
+    Основная кодовая база Wordpress.
+
+И тут ты сталкиваешься с дилеммой под названием “скачать-вставить”, ведь именно так до этого ты добавлял кодовую базу в репозиторий с сайтом. Но знакомые подсказали про такую штуку как сабмодули. Теперь твоя задача попробовать эти сабмодули и избавиться от постоянной халтуры с переносом содержимого из одного репозитория в другой. 
+
+В общем, сабмодули в git позволяют сохранить репозиторий git в качестве подкаталога другого репозитория git. сабмодуль - это просто ссылка на другой репозиторий в определенный момент времени.
+
+Сабмодули git имеет смысл использовать, если необходимо обеспечить строгое управление версиями внешних зависимостей. Ниже приводится несколько ситуаций, в которых использование подмодулей git наиболее уместно.
+
+    Внешний компонент или подпроект изменяются слишком быстро, или предстоящие изменения могут нарушить работу API. В этом случае можно заблокировать код для конкретного коммита в целях безопасности.
+
+    Поддержание проекта в актуальном состоянии: Если ты используешь проект с открытым исходным кодом в качестве зависимости в своем проекте, можешь включить его в качестве сабмодуля, чтобы было проще следить за изменениями, вносимыми в исходный репозиторий.
+
+    Управление связанными проектами: Если у тебя есть несколько связанных проектов, которые управляются как отдельные репозитории Git, ты можешь включить их в качестве сабмодулей в основной репозиторий, чтобы отслеживать их взаимосвязи и версии.
+
+Чекпоинты:
+
+    Создай пустой репозиторий. Добавь в него Wordpress как сабмодуль с именем wordpress. Далее зайди в этот сабмодуль и сделай git fetch -a, просмотри все имеющиеся тэги и верни сабмодуль к состоянию с тэгом 3.4.2. Сделай коммит основного репозитория, чтобы зафиксировать версию сабмодуля.
+
+root@Vostro-3580:/home/sokol/Desktop/repo/wordpress#git init repo
+root@Vostro-3580:/home/sokol/Desktop/repo/wordpress#git submodule add https://github.com/WordPress/WordPress /home/sokol/Desktop/repo
+root@Vostro-3580:/home/sokol/Desktop/repo/wordpress#cd wordpress
+root@Vostro-3580:/home/sokol/Desktop/repo/wordpress#git fetch -a
+root@Vostro-3580:/home/sokol/Desktop/repo/wordpress#git tag -l
+root@Vostro-3580:/home/sokol/Desktop/repo/wordpress#git reset --hard 3.4.2 
+HEAD is now at 6dde3d91f2 Tag 3.4.2
+root@Vostro-3580:/home/sokol/Desktop/repo/wordpress# cd ..
+root@Vostro-3580:/home/sokol/Desktop/repo# git add wordpress/
+root@Vostro-3580:/home/sokol/Desktop/repo# git commit wordpress
+[master (root-commit) bc34b58] reset wp to v3.4.2
+ 1 file changed, 1 insertion(+)
+ create mode 160000 wordpress
+root@Vostro-3580:/home/sokol/Desktop/repo# git log
+commit bc34b589b523c5a4e11c3f5a03952bd019eb082c (HEAD -> master)
+Author: Alexandra Sokol <alexandra.sokol@innowise.com>
+Date:   Wed Jan 10 14:36:36 2024 +0300
+
+    reset wp to v3.4.2
+
+----------------------------------------------------------------------------------------------------------------------------
+
+
+    Скопируй из сабмодуля в свой репозиторий следующие файлы, а также очисти от ненужных:
+
+cp wordpress/index.php index.php
+cp wordpress/wp-config-sample.php wp-config.php
+cp -Rf wordpress/wp-content .
+rm -Rf wp-content/plugins/hello.php wp-content/themes/twentyten
+
+    Теперь нам нужно подшаманить наши перенесенные файлы так, чтобы они взаимодействовали с сабмодулем. Измени строку 17 в index.php на require('wordpress/wp-blog-header.php');. Зафиксируй все изменения коммитом и запушь репозиторий на devops-gitlab.inno.ws.
+    
+ root@Vostro-3580:/home/sokol/Desktop/repo# git log
+commit 8f17029cf43ceeeb62dc7b7670899534ebae53d0 (HEAD -> master)
+Author: Alexandra Sokol <alexandra.sokol@innowise.com>
+Date:   Wed Jan 10 14:41:55 2024 +0300
+
+    added index.php, wp-config.php, wp-content to repo
+    changed require in index.php
+
+commit bc34b589b523c5a4e11c3f5a03952bd019eb082c
+Author: Alexandra Sokol <alexandra.sokol@innowise.com>
+Date:   Wed Jan 10 14:36:36 2024 +0300
+
+    reset wp to v3.4.2
+root@Vostro-3580:/home/sokol/Desktop/repo# git push --all  submodules
+
+
+
+https://devops-gitlab.inno.ws/alexandra.sokol/devops-task2.6
+
+   

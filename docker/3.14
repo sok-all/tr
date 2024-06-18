@@ -1,0 +1,47 @@
+Чекпоинты:
+
+    Скачай конфигурационный файл nginx. Создай volume с именем inno-dkr-04-volume. Запусти контейнер со следующими параметрами:
+
+    должен работать в фоне,
+
+    слушает на хосте 127.0.0.1:8891,
+
+    имеет имя inno-dkr-04,
+
+    должен пробрасывать скачанный вами конфигурационный файл внутрь контейнера как основной конфигурационный файл,
+
+    образ - nginx:stable,
+
+
+docker run -d -p 127.0.0.1:8891:80 --name inno-dkr-04 -v /home/sokol/Downloads/nginx.conf:/etc/nginx/nginx.conf -v inno-dkr-04-volume:/var/log/nginx/ nginx:stable
+
+
+    в директорию с логами nginx должен быть подключен созданный вами Volume (Монтирование должно осуществляться в logs/external, иначе под упадёт при старте)
+
+    Проверь работу, обратившись к 127.0.0.1:8891, - в ответ должно возвращать строку Welcome to the training program Innowise: Docker!}}
+    root@Vostro-3580:/home/sokol# curl 127.0.0.1:8891
+Welcome to the training program Innowise: Docker! 
+
+    Выведи список запущенных контейнеров - контейнер должен быть запущен. 
+    root@Vostro-3580:/home/sokol# docker ps
+CONTAINER ID   IMAGE          COMMAND                  CREATED             STATUS             PORTS                    NAMES
+770be3245272   nginx:stable   "/docker-entrypoint.…"   45 seconds ago      Up 44 seconds      127.0.0.1:8891->80/tcp   inno-dkr-04
+f50dca16f3c8   nginx:stable   "/docker-entrypoint.…"   About an hour ago   Up About an hour   127.0.0.1:8890->80/tcp   inno-dkr-03
+
+    
+    Выведи список существующих {{docker volumes. 
+    root@Vostro-3580:/home/sokol# docker volume ls
+DRIVER    VOLUME NAME
+local     inno-dkr-04-volume
+
+    Выведи содержимое volume на хостовой системе, воспользовавшись командой ls -la.
+    ls-la /var/lib/docker/volumes/inno-dkr-04-volume/_data/
+root@Vostro-3580:/home/sokol# ls -la /var/lib/docker/volumes/inno-dkr-04-volume/_data/
+total 8
+drwxr-xr-x 2 root root 4096 Jan 24 15:10 .
+drwx-----x 3 root root 4096 Jan 24 14:57 ..
+lrwxrwxrwx 1 root root   11 Jan 12 03:22 access.log -> /dev/stdout
+lrwxrwxrwx 1 root root   11 Jan 12 03:22 error.log -> /dev/stderr
+
+
+

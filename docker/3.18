@@ -1,0 +1,80 @@
+
+https://docs.docker.com/engine/reference/builder/
+https://kapeli.com/cheat_sheets/Dockerfile.docset/Contents/Resources/Documents/index
+
+
+
+Чекпоинты:
+
+    Скачай конфигурационный файл nginx.
+
+    Опиши Dockerfile, в котором:
+
+    как базовый образ используется nginx:stable,
+
+    внутрь контейнера как основной конфигурационный файл копируется скачанный тобой nginx.conf
+
+
+FROM nginx:stable
+RUN mv /etc/nginx/nginx.conf /etc/nginx/nginx1.conf
+COPY nginx.conf /etc/nginx/nginx.conf
+
+
+
+
+
+    Собери этот образ с именем nginx и тегом inno-dkr-08.
+
+root@Vostro-3580:/home/sokol/3-18# docker build . -t nginx:inno-dkr-08
+[+] Building 0.4s (8/8) FINISHED                                                          docker:default
+ => [internal] load .dockerignore                                                                   0.0s
+ => => transferring context: 2B                                                                     0.0s
+ => [internal] load build definition from Dockerfile                                                0.0s
+ => => transferring dockerfile: 146B                                                                0.0s
+ => [internal] load metadata for docker.io/library/nginx:stable                                     0.0s
+ => [1/3] FROM docker.io/library/nginx:stable                                                       0.0s
+ => [internal] load build context                                                                   0.0s
+ => => transferring context: 851B                                                                   0.0s
+ => CACHED [2/3] RUN mv /etc/nginx/nginx.conf /etc/nginx/nginx1.conf                                0.0s
+ => [3/3] COPY nginx.conf /etc/nginx/nginx.conf                                                     0.1s
+ => exporting to image                                                                              0.1s
+ => => exporting layers                                                                             0.1s
+ => => writing image sha256:1a57248c7964ac4eb06e89ea7a967ee70be99969817a2ff389fc9f51bf6b51de        0.0s
+ => => naming to docker.io/library/nginx:inno-dkr-08                                                0.0s
+root@Vostro-3580:/home/sokol/3-18# 
+
+
+
+    Выведи список образов на твоем хосте.
+
+root@Vostro-3580:/home/sokol/3-18# docker images
+REPOSITORY   TAG             IMAGE ID       CREATED              SIZE
+nginx        inno-dkr-08     1a57248c7964   About a minute ago   142MB
+nginx        stable          f373f7a623e7   9 months ago         142MB
+nginx        inno-dkr-07     0cd127114627   9 months ago         41.1MB
+nginx        stable-alpine   0cd127114627   9 months ago         41.1MB
+
+
+
+    Запусти контейнер со следующими параметрами:
+
+    образ - собранный нами образ,
+
+    должно работать в фоне,
+
+    слушает на хосте 127.0.0.1:8900.
+
+    Выведи список запущенных контейнеров - контейнер должен быть запущен.
+    
+root@Vostro-3580:/home/sokol/3-18# docker run -d -p 127.0.0.1:8900:80 nginx:inno-dkr-08
+609b0a7df3beb912f6d565cb1b8eeb65ce3d79b0d2c5f5dddd7798e79f6834db
+root@Vostro-3580:/home/sokol/3-18# docker ps
+CONTAINER ID   IMAGE               COMMAND                  CREATED         STATUS         PORTS                    NAMES
+609b0a7df3be   nginx:inno-dkr-08   "/docker-entrypoint.…"   8 seconds ago   Up 7 seconds   127.0.0.1:8900->80/tcp   confident_cori
+
+
+
+    Проверь работу, обратившись к 127.0.0.1:8900, - в ответ должно возвращать строку Welcome to the training program Innowise: Docker!
+root@Vostro-3580:/home/sokol/3-18# curl http://127.0.0.1:8900
+Welcome to the training program Innowise: Docker!
+    

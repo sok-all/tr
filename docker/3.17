@@ -1,0 +1,50 @@
+
+
+
+Чекпоинты:
+
+    Выполни загрузку образа nginx:stable-alpine на свой локальный хост. 
+root@Vostro-3580:/home/sokol# docker pull nginx:stable-alpine
+stable-alpine: Pulling from library/nginx
+1207c741d8c9: Pull complete 
+bd2102c9ad2d: Pull complete 
+da95676acad4: Pull complete 
+e1b99f2ae09f: Pull complete 
+d06f16a4976a: Pull complete 
+16dc7a3c3667: Pull complete 
+1f5130340818: Pull complete 
+Digest: sha256:089520833b93077841d3cdc7ab1f7b817de73c7e10070b71b85fa97da7623dbe
+Status: Downloaded newer image for nginx:stable-alpine
+docker.io/library/nginx:stable-alpine
+    
+    Добавь к загруженному образу новый тег inno-dkr-07 - имя репозитория должно оставаться таким же, поменяться только тег. Выведи список образов на твоем хосте.
+     docker image tag SOURCE_IMAGE[:TAG] TARGET_IMAGE[:TAG]
+     
+root@Vostro-3580:/home/sokol# docker image tag nginx:stable-alpine nginx:inno-dkr-07
+root@Vostro-3580:/home/sokol# docker images
+REPOSITORY   TAG             IMAGE ID       CREATED        SIZE
+nginx        stable          f373f7a623e7   9 months ago   142MB
+nginx        inno-dkr-07     0cd127114627   9 months ago   41.1MB
+nginx        stable-alpine   0cd127114627   9 months ago   41.1MB
+
+    
+    
+    Запусти контейнер со следующими параметрами:
+
+    контейнер должен работать в фоне,
+
+    образ, который должен быть получен в результате переименования образа nginx:stable-alpine.
+
+    Выведи список запущенных контейнеров - контейнер должен быть запущен.
+    
+root@Vostro-3580:/home/sokol# docker run -d  --name inno-dkr-07  nginx:inno-dkr-07 
+7ec9493014dabb1b67899dcbd14a52aba01b02a38b93b02b54821e5bf0eee945
+root@Vostro-3580:/home/sokol# docker ps
+CONTAINER ID   IMAGE               COMMAND                  CREATED          STATUS          PORTS                    NAMES
+7ec9493014da   nginx:inno-dkr-07   "/docker-entrypoint.…"   6 seconds ago    Up 5 seconds    80/tcp                   inno-dkr-07
+69031705ab1b   nginx:stable        "/docker-entrypoint.…"   18 minutes ago   Up 18 minutes   127.0.0.1:8893->80/tcp   inno-dkr-06-global
+5b963e0f9f2b   nginx:stable        "/docker-entrypoint.…"   54 minutes ago   Up 54 minutes   127.0.0.1:8892->80/tcp   inno-dkr-06-local
+    
+    
+
+    

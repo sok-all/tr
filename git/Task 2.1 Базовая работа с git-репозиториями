@@ -1,0 +1,87 @@
+    Установить консольный git-клиент. Настроить git-клиент, указав параметры user.name и user.email, соответствующие вашим данным. Создать репозиторий devops-task1 с помощью git init. Создать файл nginx.conf, содержащий конфигурацию nginx (базовую, которая появляется после установки пакета в linux /etc/nginx/nginx.conf).
+     
+sokol@Vostro-3580:~$ git config --global user.name "Alexandra Sokol"
+sokol@Vostro-3580:~$ git config --global user.email alexandra.sokol@innowise-group.com
+sokol@Vostro-3580:~/Desktop$ git init /home/sokol/Desktop/devops-task1
+hint: Using 'master' as the name for the initial branch. This default branch name
+hint: is subject to change. To configure the initial branch name to use in all
+hint: of your new repositories, which will suppress this warning, call:
+hint: 
+hint: 	git config --global init.defaultBranch <name>
+hint: 
+hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+hint: 'development'. The just-created branch can be renamed via this command:
+hint: 
+hint: 	git branch -m <name>
+Initialized empty Git repository in /home/sokol/Desktop/devops-task1/.git/
+sokol@Vostro-3580:~/Desktop$ cp /etc/nginx/nginx.conf /home/sokol/Desktop/devops-task1
+------------------------------------------------------------------------------------------
+
+    Создать файл README.md с описанием того, что находится в репозитории (пример: "В данном репозитории находится дефолтный конфигурационный файл nginx").  Добавить файл README.md в репозиторий с помощью команды git commit. Добавить файл nginx.conf в репозиторий с помощью команды git commit.
+root@Vostro-3580:/home/sokol/Desktop# cp /home/sokol/Desktop/README.md /home/sokol/Desktop/devops-task1/
+root@Vostro-3580:/home/sokol/Desktop# cp /etc/nginx/nginx.conf /home/sokol/Desktop/devops-task1/
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# git add README.md 
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# git add nginx.conf 
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# git commit nginx.conf 
+[master 155d213] add nginx.conf
+ 1 file changed, 83 insertions(+)
+ create mode 100644 nginx.conf
+------------------------------------------------------------------------------------------
+    С помощью команды git log проверить, отображаются ли в истории два коммита. С помощью команды git status проверить, что в данной папке не осталось больше файлов/папок, которые не добавлены в репозиторий.
+sokol@Vostro-3580:~/Desktop/devops-task1$ git log
+commit 1938be2341a004ffebd5539f514d76e4258c5e9f (HEAD -> master)
+Author: Alexandra Sokol <alexandra.sokol@innowise-group.com>
+Date:   Wed Dec 6 14:11:05 2023 +0300
+sokol@Vostro-3580:~/Desktop/devops-task1$ git status
+On branch master
+nothing to commit, working tree clean
+------------------------------------------------------------------------------------------
+    Зарегистрироваться в двух публичных хостингах git-репозиториев bitbucket и github. Доступ к devops-gitlab.inno.ws ты должен был получить в начале курса. Если возникли какие-то проблемы с доступом, свяжись с ментором.
+
+    Создать на каждом из хостингов репозиторий devops-task1; bitbucket и github - публичные (public) репозитории, devops-gitlab.inno.ws - внутренний (internal). В репозиторий, созданный в первом задании, добавить 3 удаленных сервера с помощью git remote add. Загрузить репозиторий во все git-хостинги с помощью git push.
+sokol@Vostro-3580:~/Desktop/devops-task1$ git remote add gitlab ssh://git@devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task1.git
+sokol@Vostro-3580:~/Desktop/devops-task1$ git remote -v
+bitbucket	git@bitbucket.org:devops-task1s/devops-task1/src/master.git (fetch)
+bitbucket	git@bitbucket.org:devops-task1s/devops-task1/src/master.git (push)
+github	git@github.com:sok0ll/devops-task1.git (fetch)
+github	git@github.com:sok0ll/devops-task1.git (push)
+gitlab	ssh://git@devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task1.git (fetch)
+gitlab	ssh://git@devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task1.git (push)
+
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# git push github master
+Enumerating objects: 4, done.
+Counting objects: 100% (4/4), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (3/3), 422 bytes | 422.00 KiB/s, done.
+Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
+To github.com:sok0ll/devops-task1.git
+   1938be2..155d213  master -> master
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# git push gitlab master
+Enumerating objects: 4, done.
+Counting objects: 100% (4/4), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (3/3), 422 bytes | 422.00 KiB/s, done.
+Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
+To ssh://devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task1.git
+   1938be2..155d213  master -> master
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# git push bitbucket master
+Enumerating objects: 4, done.
+Counting objects: 100% (4/4), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (3/3), 422 bytes | 422.00 KiB/s, done.
+Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
+To bitbucket.org:devops-task1s/devops-task1/src/master.git
+   1938be2..155d213  master -> master
+---------------------------------------------------------------------------------------------
+    Клонировать репозиторий. Переключиться на 3-й от начала коммит (e8b3ec06b). Просмотреть содержимое файла deleted.txt.
+    
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# git clone ssh://git@devops-gitlab.inno.ws:54042/devops-board/git-checkout.git
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-checkout# git checkout e8b3ec06b
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-checkout# cat deleted.txt
+969507679bbd60f2429968ce06036a5b
+
+--------------------------------------------------------------------------------------------
+    Проверить, что все созданные репозитории публичные, кроме репозитория на devops-gitlab.inno.ws.

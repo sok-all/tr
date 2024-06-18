@@ -1,0 +1,66 @@
+
+    Создай файл /home/user/Dockerfile, который:
+
+    собирает из образа nginx, версия которого параметризуется через аргумент ARG с именем NG_VERSION;
+
+    устанавливает переменную окружения ENV с таким же именем NG_VERSION значение которой берется из ARG;
+
+    создает файл /opt/$ARG_FILE, где значение переменной передается через ARG, но не сохраняется в ENV.
+
+ARG NG_VERSION
+FROM nginx:${NG_VERSION}
+ENV NG_VERSION=${NG_VERSION}
+ARG ARG_FILE
+RUN echo ARG_FILE >> /opt/${ARG_FILE}
+
+
+
+
+
+    Собери образ из данного Dockerfile, передав необходимые аргументы и указав образу имя nginx:inno-dkr-10
+root@Vostro-3580:/home/sokol/3-20# docker build . --build-arg NG_VERSION=stable --build-arg ARG_FILE=file.txt -t nginx:inno-dkr-10
+[+] Building 0.1s (6/6) FINISHED                                                          docker:default
+ => [internal] load build definition from Dockerfile                                                0.0s
+ => => transferring dockerfile: 160B                                                                0.0s
+ => [internal] load .dockerignore                                                                   0.0s
+ => => transferring context: 2B                                                                     0.0s
+ => [internal] load metadata for docker.io/library/nginx:stable                                     0.0s
+ => [1/2] FROM docker.io/library/nginx:stable                                                       0.0s
+ => CACHED [2/2] RUN echo ARG_FILE >> /opt/file.txt                                                 0.0s
+ => exporting to image                                                                              0.0s
+ => => exporting layers                                                                             0.0s
+ => => writing image sha256:41334b00916e5d12bf5b1101713eac6bde62a710dc741dab7456149a3ee49159        0.0s
+ => => naming to docker.io/library/nginx:inno-dkr-10  
+
+
+    Выведи список образов на твоем хосте.
+root@Vostro-3580:/home/sokol/3-20# docker images
+REPOSITORY   TAG             IMAGE ID       CREATED         SIZE
+nginx        inno-dkr-10     41334b00916e   8 minutes ago   142MB
+nginx        inno-dkr-09     d4239973cdd6   2 hours ago     169MB
+nginx        inno-dkr-08     1a57248c7964   5 hours ago     142MB
+nginx        inno-dkr-07     0cd127114627   9 months ago    41.1MB
+nginx        stable-alpine   0cd127114627   9 months ago    41.1MB
+nginx        stable          f373f7a623e7   9 months ago    142MB
+root@Vostro-3580:/home/sokol/3-20# 
+
+    Запусти контейнер из этого образа с именем inno-dkr-10 в фоновом режиме и с передачей переменной окружения INNO=DKR10.
+root@Vostro-3580:/home/sokol/3-20# docker run -d --name inno-dkr-10 -e INNO=DKR10 nginx:inno-dkr-10
+4dbb096735f078842e0038111382a804b60dea62bc4239b63ae35d621190237d
+
+
+
+    Выведи список запущенных контейнеров.
+root@Vostro-3580:/home/sokol/3-20# docker ps
+CONTAINER ID   IMAGE               COMMAND                  CREATED         STATUS         PORTS     NAMES
+4dbb096735f0   nginx:inno-dkr-10   "/docker-entrypoint.…"   9 seconds ago   Up 8 seconds   80/tcp    inno-dkr-10
+
+
+    Выведи в контейнере список переменных окружения - должна присутствовать установленная нами переменная окружения.
+root@Vostro-3580:/home/sokol/3-20# docker exec inno-dkr-10 env | grep INNO
+INNO=DKR10
+
+    Выведи в контейнере список файлов в директории /opt/.
+ root@Vostro-3580:/home/sokol/3-20# docker exec inno-dkr-10 ls /opt
+file.txt
+

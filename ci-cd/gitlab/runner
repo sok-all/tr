@@ -1,0 +1,45 @@
+sudo gitlab-runner uninstall
+sudo rm -rf /usr/local/bin/gitlab-runner
+sudo userdel gitlab-runner
+sudo rm -rf /home/gitlab-runner/
+
+
+
+
+
+# Download the binary for your system
+sudo curl -L --output /usr/local/bin/gitlab-runner https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-linux-amd64
+
+# Give it permission to execute
+sudo chmod +x /usr/local/bin/gitlab-runner
+
+# Create a GitLab Runner user
+sudo useradd --comment 'GitLab Runner' --create-home gitlab-runner --shell /bin/bash
+
+# Install and run as a service
+sudo gitlab-runner install --user=gitlab-runner --working-directory=/home/gitlab-runner
+sudo gitlab-runner start
+
+sudo gitlab-runner register --url https://devops-gitlab.inno.ws/ --registration-token GR1348941y-UYDQu7y9aTmFbVkS2z
+
+
+
+docker run -d --name gitlab-runner --restart always \
+  -v /srv/gitlab-runner/config:/etc/gitlab-runner \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  gitlab/gitlab-runner:latest
+
+gitlab-runner register
+
+
+
+
+sudo docker run --detach \
+    --hostname localhost \
+    --publish 7443:443 --publish 7080:80 --publish 7022:22 \
+    --name gitlab \
+    --restart always \
+    --volume $GITLAB_HOME/gitlab/config:/etc/gitlab \
+    --volume $GITLAB_HOME/gitlab/logs:/var/log/gitlab \
+    --volume $GITLAB_HOME/gitlab/data:/var/opt/gitlab \
+    gitlab/gitlab-ce:latest

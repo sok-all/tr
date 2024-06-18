@@ -1,0 +1,235 @@
+Task 2.4 Rebase, Squash и Cherry-pick
+
+
+
+https://devops-gitlab.inno.ws/alexandra.sokol/devops-task-rebase2
+
+    Клонировать репозиторий: git-rebase. Переместить коммиты из ветки feature в ветку develop с помощью rebase. Переместить коммиты из ветки develop в ветку master с помощью rebase. Создай репозиторий в своем аккаунте и загрузи в него получившийся локальный репозиторий. 
+    
+    
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# git clone ssh://git@devops-gitlab.inno.ws:54042/devops-board/git-rebase.git
+Cloning into 'git-rebase'...
+remote: Enumerating objects: 18, done.
+remote: Counting objects: 100% (18/18), done.
+remote: Compressing objects: 100% (17/17), done.
+remote: Total 18 (delta 6), reused 0 (delta 0), pack-reused 0
+Receiving objects: 100% (18/18), done.
+Resolving deltas: 100% (6/6), done.
+ 
+ root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-rebase# git checkout feature
+Switched to branch 'feature'
+Your branch is up to date with 'origin/feature'.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-rebase# git rebase develop
+Successfully rebased and updated refs/heads/feature.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-rebase# git checkout develop
+Switched to branch 'develop'
+Your branch is up to date with 'origin/develop'.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-rebase# git rebase master
+Successfully rebased and updated refs/heads/develop.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# git push gitlab-rebase 
+Enumerating objects: 27, done.
+Counting objects: 100% (27/27), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (23/23), done.
+Writing objects: 100% (27/27), 3.29 KiB | 336.00 KiB/s, done.
+Total 27 (delta 8), reused 0 (delta 0), pack-reused 0
+To ssh://devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task-rebase2.git
+ * [new branch]      develop -> develop
+-------------------------------------------------------------------------------------------
+
+https://devops-gitlab.inno.ws/alexandra.sokol/devops-task-squash
+
+
+    Клонируй репозиторий: git-squash. Просмотри историю коммитов в ветке develop. Объедини все FIX-коммиты c родительским (Simplified sum function) в один коммит. Создай репозиторий в своем аккаунте и загрузите в него получившийся репозиторий. 
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# git clone ssh://git@devops-gitlab.inno.ws:54042/git-moodle-cource/git-squash.git
+Cloning into 'git-squash'...
+remote: Enumerating objects: 24, done.
+remote: Total 24 (delta 0), reused 0 (delta 0), pack-reused 24
+Receiving objects: 100% (24/24), done.
+Resolving deltas: 100% (6/6), done.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# 
+
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-squash# git log
+commit 721bbd4f31fc999e99715817e4891029d4744f73 (HEAD -> master, origin/show, origin/master, origin/HEAD)
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:18:14 2019 +0300
+
+    Added main server file
+
+commit d2594d0acbde89b979f9d54809a2c956f7df9dff
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:17:44 2019 +0300
+
+    Initial commit
+    
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-squash# git checkout develop
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-squash# git log
+commit d658f11d681ac7d56d235404006d8a508309824b (HEAD -> develop, origin/develop)
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:19:53 2019 +0300
+
+    Fix #5 Final!!!
+
+commit c8957ccaa1be0086f0b72dc7af4bea7caea274b2
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:19:37 2019 +0300
+
+    Fix #4
+
+commit 1346f7fa995f150a17c4eb2d5e47d9cf9d365041
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:19:30 2019 +0300
+
+    Fix #3
+
+commit ab12f7e32d4e385a2990b3a29969baee373c6f42
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:19:22 2019 +0300
+
+    Fix #2
+
+commit 847d11d029c58b6ea7ef9ca99cd934491b8f4059
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:19:08 2019 +0300
+
+    Fix #1
+
+commit a452cc074f6ababad226a3eb81523ee00a8b5ef0
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:18:46 2019 +0300
+
+    Simplified sum function
+
+commit 721bbd4f31fc999e99715817e4891029d4744f73 (origin/show, origin/master, origin/HEAD, master)
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:18:14 2019 +0300
+
+    Added main server file
+
+commit d2594d0acbde89b979f9d54809a2c956f7df9dff
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:17:44 2019 +0300
+
+    Initial commit
+    
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-squash# git rebase -i HEAD~6   
+*******    
+	pick a452cc0 Simplified sum function
+	squash 847d11d Fix #1
+	squash ab12f7e Fix #2
+	squash 1346f7f Fix #3
+	squash c8957cc Fix #4
+	squash d658f11 Fix #5 Final!!!
+*******
+[detached HEAD 79dcafa] Simplified sum function
+ Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+ Date: Wed Jan 9 02:18:46 2019 +0300
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+Successfully rebased and updated refs/heads/develop.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-squash# git log
+commit 79dcafad2033305985bcabcd9533e9d1b7345370 (HEAD -> develop)
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:18:46 2019 +0300
+
+    Simplified sum function
+    
+    Fix #1
+    
+    Fix #2
+    
+    Fix #3
+    
+    Fix #4
+    
+    Fix #5 Final!!!
+
+commit 721bbd4f31fc999e99715817e4891029d4744f73 (origin/show, origin/master, origin/HEAD, master)
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:18:14 2019 +0300
+
+    Added main server file
+
+commit d2594d0acbde89b979f9d54809a2c956f7df9dff
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:17:44 2019 +0300
+
+    Initial commit
+    
+ root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-squash# git push --all squash
+    
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  
+  
+https://devops-gitlab.inno.ws/alexandra.sokol/devops-task-cherry-pick
+
+    Клонируй репозиторий: git-cherry-pick. Перенести коммит "Formatted code" в ветку master. Создай репозиторий в своем аккаунте и залейте туда получившийся репозиторий.
+    
+    
+
+  
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# git clone ssh://git@devops-gitlab.inno.ws:54042/devops-board/git-cherry-pick.git
+Cloning into 'git-cherry-pick'...
+remote: Enumerating objects: 15, done.
+remote: Counting objects: 100% (15/15), done.
+remote: Compressing objects: 100% (14/14), done.
+remote: Total 15 (delta 3), reused 0 (delta 0), pack-reused 0
+Receiving objects: 100% (15/15), done.
+Resolving deltas: 100% (3/3), done.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# cd git-cherry-pick/ 
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-cherry-pick# git remote add cherry-pick ssh://git@devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task-cherry-pick.git
+
+                                                                                        
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-cherry-pick# git log             взять SHA  formatted code
+commit 81bb9df0f933d01e12ef18d027a513c7f85af4ed (HEAD -> develop, origin/develop)
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:43:38 2019 +0300
+
+    Simplified sum function;
+
+commit bf38ea126d77228dc7937774cc0281e487060a59
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:43:21 2019 +0300
+
+    Formatted code
+
+commit 62634d33eb46623cd3bd74b4066941c15fcedeb0
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:43:09 2019 +0300
+
+    Renamed sum function
+
+commit 643bb09f23c55923fa530d3a4ca6c4adbd4aee12 (origin/master, origin/HEAD, master)
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:41:32 2019 +0300
+
+    Added main server file
+
+commit e79007f83297dcd909ffa6868489b9011c844b57
+Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+Date:   Wed Jan 9 02:41:15 2019 +0300
+
+    Initial commit
+
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-cherry-pick# git checkout master
+Switched to branch 'master'
+Your branch is up to date with 'origin/master'.
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-cherry-pick# git cherry-pick bf38ea126d77228dc7937774cc0281e487060a59
+Auto-merging main.go
+CONFLICT (content): Merge conflict in main.go
+error: could not apply bf38ea1... Formatted code
+hint: After resolving the conflicts, mark them with
+hint: "git add/rm <pathspec>", then run
+hint: "git cherry-pick --continue".
+hint: You can instead skip this commit with "git cherry-pick --skip".
+hint: To abort and get back to the state before "git cherry-pick",
+hint: run "git cherry-pick --abort".
+    ***conflict solving ***
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-cherry-pick# git cherry-pick bf38ea126d77228dc7937774cc0281e487060a59
+Auto-merging main.go
+[master c35da28] Formatted code
+ Author: Vasiliy I Ozerov <vasiliyozerov@gmail.com>
+ Date: Wed Jan 9 02:43:21 2019 +0300
+ 1 file changed, 45 insertions(+), 45 deletions(-)
+ rewrite main.go (72%)
+root@Vostro-3580:/home/sokol/Desktop/devops-task1/git-cherry-pick# git push cherry-pick
+

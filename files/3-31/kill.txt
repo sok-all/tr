@@ -1,0 +1,6 @@
+CONTAINER ID   IMAGE                 COMMAND                  CREATED          STATUS                            PORTS     NAMES
+72551b5f4210   nginx:stable-alpine   "/docker-entrypoint.…"   27 minutes ago   Exited (137) About a minute ago             inno-dkr-23-unless-stopped
+e28a3082cd6a   nginx:stable-alpine   "/docker-entrypoint.…"   29 minutes ago   Exited (137) About a minute ago             inno-dkr-23-always
+8f16467f0a11   nginx:stable-alpine   "/docker-entrypoint.…"   30 minutes ago   Exited (137) About a minute ago             inno-dkr-23-on-failure
+55e0648050d6   nginx:stable-alpine   "/docker-entrypoint.…"   30 minutes ago   Exited (137) About a minute ago             inno-dkr-23-no
+d5e90ce07e84   nginx:stable-alpine   "/docker-entrypoint.…"   32 minutes ago   Exited (137) About a minute ago             funny_shirley

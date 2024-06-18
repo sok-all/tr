@@ -1,0 +1,51 @@
+    Запусти контейнер со следующими параметрами:
+
+    должно работать в фоне,
+
+    имеет имя inno-dkr-05-run-X, где X - набор из 10 случайных букв и/или цифр которая должна генерироваться в момент запуска контейнера (можно использовать команду cat /dev/urandom | tr -cd 'a-f0-9' | head -c 10),
+
+    образ - nginx:stable,
+    
+    команда для запуска обоих контейнеров должна быть одинаковой (выполнить одинаковую команду два раза подряд).
+
+ docker run -d --name inno-dkr-05-run-$(cat /dev/urandom | tr -cd 'a-f0-9' | head -c 10) nginx:stable
+   
+root@Vostro-3580:/home/sokol# docker ps
+CONTAINER ID   IMAGE          COMMAND                  CREATED             STATUS             PORTS                    NAMES
+752b60a01fe7   nginx:stable   "/docker-entrypoint.…"   3 seconds ago    Up 2 seconds    80/tcp                   inno-dkr-05-run-21ce9c0933
+ed71b82a21e4   nginx:stable   "/docker-entrypoint.…"   6 seconds ago       Up 6 seconds       80/tcp                   inno-dkr-05-run-0a2bb82bbc
+
+    
+
+    
+    Запусти контейнер со следующими параметрами:
+
+    должно работать в фоне,
+
+    имеет имя inno-dkr-05-stop,
+
+    образ - nginx:stable.
+    
+docker run -d --name inno-dkr-05-stop nginx:stable
+
+    Выполни команду docker ps, вывод перенаправь в файл /home/user/ps.txt (docker ps | tee /home/user/ps.txt). Останови контейнер inno-dkr-05-stop. Выведи список всех контейнеров.
+    
+    root@Vostro-3580:/home/sokol# docker ps -a
+CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS                      PORTS                    NAMES
+88ae56e0cd0b   nginx:stable   "/docker-entrypoint.…"   2 minutes ago    Exited (0) 14 seconds ago                            inno-dkr-05-stop
+752b60a01fe7   nginx:stable   "/docker-entrypoint.…"   3 minutes ago    Up 3 minutes                80/tcp                   inno-dkr-05-run-21ce9c0933
+ed71b82a21e4   nginx:stable   "/docker-entrypoint.…"   10 minutes ago   Up 10 minutes               80/tcp                   inno-dkr-05-run-0a2bb82bbc
+
+    
+     Одной командой останови все запущенные контейнеры. Выведи список всех контейнеров. Одной командой удали все контейнеры, любой из разобранных методов подходит.
+    root@Vostro-3580:/home/sokol# docker stop $(docker ps -a -q)
+88ae56e0cd0b
+752b60a01fe7
+ed71b82a21e4
+root@Vostro-3580:/home/sokol# docker rm $(docker ps -a -q)
+88ae56e0cd0b
+752b60a01fe7
+ed71b82a21e4
+
+    
+    

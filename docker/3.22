@@ -1,0 +1,107 @@
+
+Чекпоинты:
+
+    Загрузи себе образ nginx:stable-alpine, чтобы он был доступен локально. 
+
+    Добавь к загруженному образу новый тег {{inno-dkr-12 }}
+
+    Выведи список образов на вашем хосте — оба образа должны быть с одним ID. Удалите образ nginx:stable-alpine.
+    
+root@Vostro-3580:/home/sokol# docker image tag nginx:stable-alpine nginx:inno-dkr-12
+root@Vostro-3580:/home/sokol# docker images
+REPOSITORY    TAG             IMAGE ID       CREATED        SIZE
+inno-dkr-11   optimized       df979106abe7   4 days ago     143MB
+inno-dkr-11   default         7fc6c44a7674   4 days ago     202MB
+nginx         inno-dkr-10     41334b00916e   4 days ago     142MB
+nginx         inno-dkr-09     d4239973cdd6   4 days ago     169MB
+nginx         inno-dkr-08     1a57248c7964   5 days ago     142MB
+nginx         stable          f373f7a623e7   9 months ago   142MB
+nginx         inno-dkr-07     0cd127114627   9 months ago   41.1MB
+nginx         inno-dkr-12     0cd127114627   9 months ago   41.1MB
+nginx         stable-alpine   0cd127114627   9 months ago   41.1MB
+root@Vostro-3580:/home/sokol# docker image rm nginx:stable-alpine
+Untagged: nginx:stable-alpine
+
+
+    Выведи список образов на вашем хосте — наш переименованный образ все еще должен быть в списке. 
+docker images
+REPOSITORY    TAG           IMAGE ID       CREATED        SIZE
+inno-dkr-11   optimized     df979106abe7   4 days ago     143MB
+inno-dkr-11   default       7fc6c44a7674   4 days ago     202MB
+nginx         inno-dkr-10   41334b00916e   4 days ago     142MB
+nginx         inno-dkr-09   d4239973cdd6   4 days ago     169MB
+nginx         inno-dkr-08   1a57248c7964   5 days ago     142MB
+nginx         stable        f373f7a623e7   9 months ago   142MB
+nginx         inno-dkr-07   0cd127114627   9 months ago   41.1MB
+nginx         inno-dkr-12   0cd127114627   9 months ago   41.1MB
+
+    Еще раз выполни загрузку образа nginx:stable-alpine.
+root@Vostro-3580:/home/sokol# docker pull nginx:stable-alpine
+stable-alpine: Pulling from library/nginx
+3c854c8cbf46: Pull complete 
+241ff9bd896f: Pull complete 
+30c9f7363937: Pull complete 
+07eddbba594d: Pull complete 
+fb1b4fc618d2: Pull complete 
+e46bf4fa8bbe: Pull complete 
+2b1f08e01893: Pull complete 
+Digest: sha256:c06b20150da98068f40dcb79900b2cc999040b7170afa07d78dd138fef0f10ce
+Status: Downloaded newer image for nginx:stable-alpine
+docker.io/library/nginx:stable-alpine
+
+    Выведи список образов на вашем хосте и сохраните их в файл ( docker images | tee /home/user/images.txt ) — его ID остался прежним, хотя Docker и пришлось загрузить его, поскольку он не знает, что с таким ID у нас уже есть образ.
+root@Vostro-3580:/home/sokol# docker images | tee /home/sokol/images.txt 
+REPOSITORY    TAG             IMAGE ID       CREATED        SIZE
+inno-dkr-11   optimized       df979106abe7   4 days ago     143MB
+inno-dkr-11   default         7fc6c44a7674   4 days ago     202MB
+nginx         inno-dkr-10     41334b00916e   4 days ago     142MB
+nginx         inno-dkr-09     d4239973cdd6   4 days ago     169MB
+nginx         inno-dkr-08     1a57248c7964   5 days ago     142MB
+nginx         stable          f373f7a623e7   9 months ago   142MB
+nginx         stable-alpine   2c3daafa6cc7   9 months ago   41.1MB
+nginx         inno-dkr-07     0cd127114627   9 months ago   41.1MB
+nginx         inno-dkr-12     0cd127114627   9 months ago   41.1MB
+
+    Удали все имеющиеся образы nginx одной командой (любое удаление разрешено — через xargs, прямое указание тегов или другой метод). Выведи список образов на вашем хосте.
+ docker rmi -f $(docker images -a -q) 
+ 
+ docker images
+REPOSITORY   TAG       IMAGE ID   CREATED   SIZE
+
+     Запусти контейнер со следующими параметрами:
+
+    должен работать в фоне,
+
+    образ — nginx:stable-alpine,
+
+    имя — inno-dkr-12.
+    
+docker run -d --name inno-dkr-12 nginx:stable-alpine
+7ce9ff1a40e45ed433edd5f9db14890022630d9d6cd79c9a6fffa5a22b7ca384
+
+    Попробуй удалить образ nginx:stable-alpine без флагов. 
+docker rmi nginx:stable-alpine
+Error response from daemon: conflict: unable to remove repository reference "nginx:stable-alpine" (must force) - container 7ce9ff1a40e4 is using its referenced image 2c3daafa6cc7
+
+    Удали его с флагом --force.
+docker rmi -f nginx:stable-alpine
+Untagged: nginx:stable-alpine
+Untagged: nginx@sha256:c06b20150da98068f40dcb79900b2cc999040b7170afa07d78dd138fef0f10ce
+
+    Выведи список запущенных контейнеров — контейнер должен продолжать работать. Перезапусти контейнер. 
+docker ps
+CONTAINER ID   IMAGE          COMMAND                  CREATED              STATUS              PORTS     NAMES
+7ce9ff1a40e4   2c3daafa6cc7   "/docker-entrypoint.…"   About a minute ago   Up About a minute   80/tcp    inno-dkr-12
+
+    Выведи список запущенных контейнеров — контейнер должен работать.
+docker restart inno-dkr-12
+inno-dkr-12
+
+docker ps
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS     NAMES
+7ce9ff1a40e4   2c3daafa6cc7   "/docker-entrypoint.…"   3 minutes ago   Up 5 seconds   80/tcp    inno-dkr-12
+root@Vostro-3580:/home/sokol# 
+
+
+
+

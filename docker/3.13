@@ -1,0 +1,74 @@
+
+Чекпоинты:
+
+    Скачай конфигурационный файл nginx. Запусти контейнер со следующими параметрами: 
+
+    должен работать в фоне,
+
+    слушает на хосте 127.0.0.1:8890,
+
+    имеет имя inno-dkr-03,
+
+    должен пробрасывать скачанный вами конфигурационный файл внутрь контейнера как основной конфигурационный файл,
+
+    образ - nginx:stable.
+
+
+docker run -d -p 127.0.0.1:8890:80 --name inno-dkr-03 -v /home/sokol/Downloads/nginx.conf:/etc/nginx/nginx.conf nginx:stable
+
+
+    Проверь работу, обратившись к 127.0.0.1:8890, - в ответ должно возвращать строку Welcome to the training program Innowise: Docker }}Выведи список запущенных контейнеров - контейнер должен быть запущен. Выполни команду {{docker exec -ti inno-dkr-03 md5sum /etc/nginx/nginx.conf
+    
+    curl http://127.0.0.1:8890
+    
+    docker ps
+    
+    docker exec -ti inno-dkr-03 md5sum /etc/nginx/nginx.conf   
+
+    Скачай новый конфигурационный файл nginx. Измени проброшенный конфигурационный файл, размещенный на хостовой системе, на новый. Проведи эксперименты с различными способами изменения: через команду cp, через vim, nano. За vim +2 балла в карму. 
+   
+    mv nginx.conf nginx-3-13-1.conf 
+    cp /home/sokol/Downloads/nginx-conf-3-13-2/nginx.conf /home/sokol/Downloads/nginx.conf
+    docker exec inno-dkr-03 nginx -s reload
+2024/01/22 14:20:52 [notice] 55#55: signal process started
+    
+root@Vostro-3580:/home/sokol/Downloads# vim nginx.conf 
+
+
+    
+    Выполни reload nginx без остановки контейнера при помощи команды exec. Проверь работу, обратившись к 127.0.0.1:8890, - в ответ должно возвращать строку Welcome to the training program Innowise: Docker! Again!
+
+root@Vostro-3580:/home/sokol/Downloads# docker exec inno-dkr-03 nginx -s reload
+2024/01/22 14:25:51 [notice] 75#75: signal process started
+root@Vostro-3580:/home/sokol/Downloads# curl http://127.0.0.1:8890
+Welcome to the training program Innowise: Docker! Again!
+root@Vostro-3580:/home/sokol/Downloads# 
+
+    
+
+    Выполни команду docker exec -ti inno-dkr-03 md5sum /etc/nginx/nginx.conf (вывод в консоли сохраняем). Сравни результаты изменения файла nginx.conf разными командами. Найди информацию, почему в некоторых случаях изменение не отображалось в контейнере. Выведи список запущенных контейнеров - контейнер должен быть запущен.
+    
+root@Vostro-3580:/home/sokol/Downloads# docker exec -ti inno-dkr-03 md5sum /etc/nginx/nginx.conf
+e9914ee9d3c1fbedca68494ecf14028e  /etc/nginx/nginx.conf
+
+root@Vostro-3580:/home/sokol/Downloads# docker diff inno-dkr-03
+C /var
+C /var/cache
+C /var/cache/nginx
+A /var/cache/nginx/client_temp
+A /var/cache/nginx/fastcgi_temp
+A /var/cache/nginx/proxy_temp
+A /var/cache/nginx/scgi_temp
+A /var/cache/nginx/uwsgi_temp
+C /etc
+C /etc/nginx
+C /etc/nginx/conf.d
+C /etc/nginx/conf.d/default.conf
+C /run
+A /run/nginx.pid
+root@Vostro-3580:/home/sokol# docker ps
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS                    NAMES
+f50dca16f3c8   nginx:stable   "/docker-entrypoint.…"   9 minutes ago   Up 9 minutes   127.0.0.1:8890->80/tcp   inno-dkr-03
+
+(Changed Added Deleted )
+

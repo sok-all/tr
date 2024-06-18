@@ -1,0 +1,263 @@
+# Task 3.24 Images. Multistage
+## Description
+
+Используемые технологии:  Linux, Docker, Nginx
+
+В текущем задании мы изучим такой механизм работы с образами, как Multi-stage builds — многоэтапные сборки.
+
+Итак, что же такое Multi-stage builds? Это возможность использовать несколько базовых образов, чтобы выполнять разные действия с исходными файлами, после чего можно передать результат работы в другие образы. Это делается с целью уменьшения размеров образа либо для передачи файлов в другую исполняемую среду.
+
+Изучим приближенный к жизни кейс — компилируемый контент.
+
+Под компилируемым контентом мы имеем в виду такое:
+
+    собранная статика,
+
+    собранные бинарные файлы.
+
+Средства, которые используются для сборки контента из-за зависимостей, могут иметь общий объем файлов превышающий выходной контент в несколько раз, что является нецелесообразным с точки зрения использования конечным пользователем.
+
+В общем случае Dockerfile для Multi-stage выглядит так:
+FROM $BUILD_IMAGE AS build
+
+# Команды, стягивающие зависимости и собирающие конечный контент
+
+FROM $RUNTIME_IMAGE
+
+COPY --from=build $SRC_COMPILED_PATH $DEST_COMPILED_PATH
+
+В котором
+
+    BUILD_IMAGE — это образ, который используется для сборки компилируемого контента;
+
+    RUNTIME_IMAGE — это образ, который используется для хранения и запуска скомпилированного контента;
+
+    SRC_COMPILED_PATH — путь в образе сборки, в котором расположен скомпилированный контент;
+
+    DEST_COMPILED_PATH — путь в исполняемом образе, в котором мы сохраним скомпилированный контент.
+
+Нужно обратить внимание на флаг --from=build, присутствующий рядом с командой COPY. Он дает понять, из какого образа, в рамках данного контекста, требуется копировать данные. То есть, мы копируем не из директории, где мы собираем образ (контекст сборки), а из образа, который уже собрали, — без опции этот путь применялся бы к контексту.
+
+Эта система слаженно работает потому, что мы обращаемся к образу, который собираем в рамках того же файла сборки. Но на самом деле данная схема позволяет копировать не только из образов, которые мы собираем сами, но и из внешних образов, например, из nginx:stable.
+
+Стоит также упомянуть, что в предложенной схеме применимы те же принципы кэширования, о которых мы говорили в предыдущем задании, и те же правила инвалидации кэша.
+
+Необходимо упомянуть еще один пункт, о котором мы говорили в задаче по слоям. Секретные данные остаются видны в history, так что, используя multistage, мы можем решить вопрос с обнаружением секретов. Так как директивы, которые мы могли обнаружить, останутся в образе-сборщике, а в истории конечного образа их не будет.
+
+Cуществуют также сценарии, при которых нам необходимо получить образ именно из середины.
+
+Для этого у docker build есть еще один флаг  {{-target}}, в него передается имя подобраза, который требуется получить.
+
+Рассмотрим это на примере. Допустим, у нас есть такой Dockerfile:
+FROM alpine:latest AS build
+ARG test
+ENV DAEMON_VERSION 1.0.0
+RUN echo $test > tmpfile
+
+FROM alpine:latest
+COPY --from=build tmpfile tmpfile
+
+Сборка в общем случае будет выглядеть следующим образом:
+$ docker build .
+Sending build context to Docker daemon  2.048kB
+Step 1/6 : FROM alpine:latest AS build
+ ---> 965ea09ff2eb
+Step 2/6 : ARG test
+ ---> Using cache
+ ---> 2b3c376d3b77
+Step 3/6 : ENV DAEMON_VERSION 1.0.0
+ ---> Using cache
+ ---> 1e258bed828e
+Step 4/6 : RUN echo $test > tmpfile
+ ---> Using cache
+ ---> 91cecca34cbc
+Step 5/6 : FROM alpine:latest
+ ---> 965ea09ff2eb
+Step 6/6 : COPY --from=build tmpfile tmpfile
+ ---> 09fd373940c3
+Successfully built 09fd373940c3
+
+Но если нам требуется только build образ, то можно его получить так:
+$ docker build --target build .
+Sending build context to Docker daemon  2.048kB
+Step 1/4 : FROM alpine:latest AS build
+ ---> 965ea09ff2eb
+Step 2/4 : ARG test
+ ---> Using cache
+ ---> 2b3c376d3b77
+Step 3/4 : ENV DAEMON_VERSION 1.0.0
+ ---> Using cache
+ ---> 1e258bed828e
+Step 4/4 : RUN echo $test > tmpfile
+ ---> Using cache
+ ---> 91cecca34cbc
+Successfully built 91cecca34cbc
+
+Самая распространенная ситуация, в которой используется такая схема — это снятие нагрузки по отдаче статики с основного приложения. То есть, когда мы ставим перед нашим приложением кэширующий прокси (например nginx), который отдает всю статику, а динамические запросы — REST запросы — проксирует в backend, стоящий за ним.
+
+## Чекпоинты:
+
+    Склонируй директорию gocalc.
+
+    Напиши и добавь в директорию /home/user/gocalc/Dockerfile с Multi-stage build, в котором сборка выполняется в одном образе (пусть это будет образ golang:1.19.1-alpine), а исполнение в другом образе - alpine:3.10.3. Просьба учесть, что в Go 1.16 и выше изменилось дефолтное значение переменной GO111MODULE, которая отвечает за поиск модулей в каталоге GOPATH. Для корректной работы, необходимо указать значение auto.
+
+    Для установки golang зависимостей используйте команду go get
+
+    Для сборки бинарного файла используйте команду go build. Используя дополнительные флаги, задайте имя выходного файла "app"
+
+    В итоговом образе укажите директиву, для запуска вашего файла при старте контейнера
+    
+FROM golang:1.19.1-alpine AS build
+ENV GO111MODULE=auto
+RUN apk add git
+#RUN echo $GOPATH  =/go 
+WORKDIR /go/src/app
+COPY . .
+RUN go get
+RUN go build -o app
+FROM alpine:3.10.3
+COPY --from=build /go/src/app/app /usr/local/bin
+CMD ["/go/src/app/app"]
+
+
+    Собери образ. Выведи список образов. Изучи history собранного образа. Запушь результаты задания в репозиторий на Gitlab.
+docker build . -t 3-24
+[+] Building 27.4s (14/14) FINISHED                                                       docker:default
+ => [internal] load .dockerignore                                                                   0.0s
+ => => transferring context: 2B                                                                     0.0s
+ => [internal] load build definition from Dockerfile                                                0.0s
+ => => transferring dockerfile: 293B                                                                0.0s
+ => [internal] load metadata for docker.io/library/alpine:3.10.3                                    1.2s
+ => [internal] load metadata for docker.io/library/golang:1.19.1-alpine                             1.2s
+ => CACHED [stage-1 1/2] FROM docker.io/library/alpine:3.10.3@sha256:c19173c5ada610a5989151111163d  0.0s
+ => [build 1/6] FROM docker.io/library/golang:1.19.1-alpine@sha256:d475cef843a02575ebdcb1416d98cd7  0.0s
+ => [internal] load build context                                                                   0.0s
+ => => transferring context: 320B                                                                   0.0s
+ => CACHED [build 2/6] RUN apk add git                                                              0.0s
+ => [build 3/6] WORKDIR /go/src/app                                                                 0.1s
+ => [build 4/6] COPY . .                                                                            0.1s
+ => [build 5/6] RUN go get                                                                         24.4s
+ => [build 6/6] RUN go build -o app                                                                 1.0s
+ => [stage-1 2/2] COPY --from=build /go/src/app/app /usr/local/bin                                  0.1s
+ => exporting to image                                                                              0.1s
+ => => exporting layers                                                                             0.1s
+ => => writing image sha256:ba0eafbf6fb27238975e41331827bfe2cb107d3d2579a832562ee5a9221559ff        0.0s
+ => => naming to docker.io/library/3-24                                                             0.0s
+root@Vostro-3580:/home/sokol/3-24/docker/gocalc# vim Dockerfile 
+root@Vostro-3580:/home/sokol/3-24/docker/gocalc# docker images
+REPOSITORY   TAG       IMAGE ID       CREATED              SIZE
+3-24         latest    ba0eafbf6fb2   About a minute ago   18.3MB
+
+docker history 3-24
+IMAGE          CREATED         CREATED BY                                      SIZE      COMMENT
+ba0eafbf6fb2   2 minutes ago   CMD ["/go/src/app/app"]                         0B        buildkit.dockerfile.v0
+<missing>      2 minutes ago   COPY /go/src/app/app /usr/local/bin # buildk…   12.8MB    buildkit.dockerfile.v0
+<missing>      4 years ago     /bin/sh -c #(nop)  CMD ["/bin/sh"]              0B        
+<missing>      4 years ago     /bin/sh -c #(nop) ADD file:fe1f09249227e2da2…   5.55MB    
+root@Vostro-3580:/home/sokol/3-24/docker/gocalc# 
+
+    Модифицировать Dockerfile таким образом, что не должен использовать именованный этап (директива FROM не должна содержать параметр AS у образа сборщика, и COPY --from= не должен ссылаться на имя).
+
+FROM golang:1.19.1-alpine 
+ENV GO111MODULE=auto
+RUN apk add git
+#RUN echo $GOPATH  =/go 
+WORKDIR /go/src/app
+COPY . .
+RUN go get -d -v
+RUN go build -o app
+FROM alpine:3.10.3
+COPY --from=0 /go/src/app/app /usr/local/bin    
+CMD ["/go/src/app/app"]
+
+root@Vostro-3580:/home/sokol/3-24/docker/gocalc# docker build . -t 3-24-1
+[+] Building 26.7s (14/14) FINISHED                                                       docker:default
+ => [internal] load build definition from Dockerfile                                                0.0s
+ => => transferring dockerfile: 287B                                                                0.0s
+ => [internal] load .dockerignore                                                                   0.0s
+ => => transferring context: 2B                                                                     0.0s
+ => [internal] load metadata for docker.io/library/alpine:3.10.3                                    2.0s
+ => [internal] load metadata for docker.io/library/golang:1.19.1-alpine                             2.0s
+ => [stage-1 1/2] FROM docker.io/library/alpine:3.10.3@sha256:c19173c5ada610a5989151111163d28a6736  0.0s
+ => [stage-0 1/6] FROM docker.io/library/golang:1.19.1-alpine@sha256:d475cef843a02575ebdcb1416d98c  0.0s
+ => [internal] load build context                                                                   0.0s
+ => => transferring context: 314B                                                                   0.0s
+ => CACHED [stage-0 2/6] RUN apk add git                                                            0.0s
+ => CACHED [stage-0 3/6] WORKDIR /go/src/app                                                        0.0s
+ => [stage-0 4/6] COPY . .                                                                          0.1s
+ => [stage-0 5/6] RUN go get -d -v                                                                 20.8s
+ => [stage-0 6/6] RUN go build -o app                                                               3.6s 
+ => CACHED [stage-1 2/2] COPY --from=0 /go/src/app/app /usr/local/bin                               0.0s 
+ => exporting to image                                                                              0.0s 
+ => => exporting layers                                                                             0.0s 
+ => => writing image sha256:ba0eafbf6fb27238975e41331827bfe2cb107d3d2579a832562ee5a9221559ff        0.0s 
+ => => naming to docker.io/library/3-24-1                                                           0.0s 
+root@Vostro-3580:/home/sokol/3-24/docker/gocalc# docker images
+REPOSITORY   TAG       IMAGE ID       CREATED         SIZE
+3-24-1       latest    ba0eafbf6fb2   6 minutes ago   18.3MB
+3-24         latest    ba0eafbf6fb2   6 minutes ago   18.3MB
+
+    Добавь в /home/user/gocalc/Dockerfile директиву ARG с секретом в первый образ и запиши его значение в файл в конечном образе. Собери образ.
+
+FROM golang:1.19.1-alpine
+ENV GO111MODULE=auto
+ARG SECRET=secret
+RUN apk add git
+#RUN echo $GOPATH  =/go 
+WORKDIR /go/src/app
+COPY . .
+RUN echo "$SECRET" > secret.txt
+RUN go get -d -v
+RUN go build -o app
+FROM alpine:3.10.3
+COPY --from=0 /go/src/app/app /usr/local/bin
+COPY --from=0 /go/src/app/secret.txt /usr/local/bin/
+CMD ["/go/src/app/app"]
+
+
+
+
+docker build . -t 3-24s --build-arg SECRET=secretsecret [+] Building 30.2s (16/16) FINISHED                                                       docker:default
+ => [internal] load build definition from Dockerfile                                                0.0s
+ => => transferring dockerfile: 390B                                                                0.0s
+ => [internal] load .dockerignore                                                                   0.0s
+ => => transferring context: 2B                                                                     0.0s
+ => [internal] load metadata for docker.io/library/alpine:3.10.3                                    0.8s
+ => [internal] load metadata for docker.io/library/golang:1.19.1-alpine                             0.8s
+ => [stage-1 1/3] FROM docker.io/library/alpine:3.10.3@sha256:c19173c5ada610a5989151111163d28a6736  0.0s
+ => CACHED [stage-0 1/7] FROM docker.io/library/golang:1.19.1-alpine@sha256:d475cef843a02575ebdcb1  0.0s
+ => [internal] load build context                                                                   0.0sll
+ => => transferring context: 59B                                                                    0.0s
+ => [stage-0 2/7] RUN apk add git                                                                   3.1s
+ => [stage-0 3/7] WORKDIR /go/src/app                                                               0.1s
+ => [stage-0 4/7] COPY . .                                                                          0.1s 
+ => [stage-0 5/7] RUN echo "secretsecret" > secret.txt                                              0.5s 
+ => [stage-0 6/7] RUN go get -d -v                                                                 21.7s 
+ => [stage-0 7/7] RUN go build -o app                                                               3.5s 
+ => CACHED [stage-1 2/3] COPY --from=0 /go/src/app/app /usr/local/bin                               0.0s 
+ => [stage-1 3/3] COPY --from=0 /go/src/app/secret.txt /usr/local/bin/                              0.1s 
+ => exporting to image                                                                              0.1s 
+ => => exporting layers                                                                             0.1s 
+ => => writing image sha256:6e6249545495486fab2bca79f613435654d4d5a04000c71f27d8a763024120bc        0.0s 
+ => => naming to docker.io/library/3-24s                                                            0.0s
+
+
+    Склонируй на свою машину содержимое из официального репозитория grafana из ветки с именем v6.3.x. Добавь в существующий /home/user/grafana/Dockerfile еще один образ на базе nginx:alpine, в который копируется скомпилированная на предыдущем шаге статика (public);
+FROM nginx:alpine
+COPY --from=1 /usr/src/app/public /var/www/html
+
+
+    Собери отдельно образ с nginx, отдельно с приложением. Выставь им теги grafana:app и grafana:static. Выведи список образов.
+docker build . -t grafana:static 
+[+] Building 341.4s (18/18) FINISHED                                                      docker:default
+docker build . -t grafana:app
+[+] Building 69.2s (36/36) FINISHED                                                       docker:default
+docker images
+REPOSITORY   TAG       IMAGE ID       CREATED          SIZE
+grafana      app       8399853f0197   24 seconds ago   245MB
+grafana      static    411740c078e3   2 minutes ago    77.8MB
+3-24s        latest    6e6249545495   34 minutes ago   18.3MB
+
+
+
+

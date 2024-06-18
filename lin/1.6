@@ -1,0 +1,204 @@
+6
+
+    Создать сервер t2.micro(Ubuntu), он должен иметь публичный ip и доступ в интернет. При создании использовать User Data cкрипт(приложен ниже). Разрешить http и https трафик в security group, ассоциированной с данным сервером.
+    
+    #!/bin/bash
+    sudo apt-get update -y
+    sudo apt-get install -y nginx
+    sudo rm -r /var/www/html/index.nginx-debian.html
+    echo "Welcome to my web server. My private IP is $(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)" | sudo tee /var/www/html/index.nginx-debian.html
+    sudo systemctl reload nginx
+    
+    
+--------------------------------------------------------------------------------------------------
+
+    Зарегистрироваться на сайте: ​ , разобраться в типах DNS записей, сделать DNS записать типа A для созданного сервера.
+
+hostname:   16hn.ddns.net
+
+-----------------------------------------------------------------------------------------------------
+
+    Получить сертификат для своего сервера, используя letsencrypt. Разобраться в цепочках сертификатов. 
+
+sudo apt-get update
+sudo apt-get install certbot
+ubuntu@ip-172-31-24-112:~$ sudo certbot certonly --webroot -w /var/www/html -d 16hn.ddns.net
+Saving debug log to /var/log/letsencrypt/letsencrypt.log
+Enter email address (used for urgent renewal and security notices)
+ (Enter 'c' to cancel): alexandra.sokol@innowise.com
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Please read the Terms of Service at
+https://letsencrypt.org/documents/LE-SA-v1.3-September-21-2022.pdf. You must
+agree in order to register with the ACME server. Do you agree?
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+(Y)es/(N)o: y
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Would you be willing, once your first certificate is successfully issued, to
+share your email address with the Electronic Frontier Foundation, a founding
+partner of the Let's Encrypt project and the non-profit organization that
+develops Certbot? We'd like to send you email about our work encrypting the web,
+EFF news, campaigns, and ways to support digital freedom.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+(Y)es/(N)o: n
+Account registered.
+Requesting a certificate for 16hn.ddns.net
+
+Successfully received certificate.
+Certificate is saved at: /etc/letsencrypt/live/16hn.ddns.net/fullchain.pem
+Key is saved at:         /etc/letsencrypt/live/16hn.ddns.net/privkey.pem
+This certificate expires on 2024-04-09.
+These files will be updated when the certificate renews.
+Certbot has set up a scheduled task to automatically renew this certificate in the background.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+If you like Certbot, please consider supporting our work by:
+ * Donating to ISRG / Let's Encrypt:   https://letsencrypt.org/donate
+ * Donating to EFF:                    https://eff.org/donate-le
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ubuntu@ip-172-31-24-112:~$ 
+
+--------------------------------------------------------------------------------------------------------
+
+    Установить Nginx на сервер. Написать конфигурацию nginx для обслуживания на 80 и 443 портах. 80 порт должен делать редирект на 443(сайт должен работать только по HTTPS). Веб-сервер должен раздавать /var/www/html/index.nginx-debian.html, который был сгенерирован User Data скриптом. 
+
+
+
+                server {
+    	listen 80;
+    	server_name 16hn.ddns.net;
+
+    	# Redirect HTTP to HTTPS
+    	location / {
+        return 301 https://$host$request_uri;
+	    }
+	}
+
+              server {
+        listen 443 ssl;
+        server_name 16hn.ddns.net;
+
+        ssl_certificate /etc/letsencrypt/live/16hn.ddns.net/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/16hn.ddns.net/privkey.pem;
+
+        # Enable SSL protocols and ciphers
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers 'EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH';
+
+
+#Certificate is saved at: /etc/letsencrypt/live/16hn.ddns.net/fullchain.pem
+#Key is saved at:         /etc/letsencrypt/live/16hn.ddns.net/privkey.pem
+
+        root /var/www/html;
+         index index.nginx-debian.html;
+
+       
+        }
+
+
+
+
+---------------------------------------------------------------------------------------------------------
+
+    Проверить работоспособность. При вводе домена в поисковую строку должен выдаваться текст: Welcome to my web server. My private IP is *********. 
+
+
+---------------------------------------------------------------------------------------------------------
+
+    В следующих чекпоинтах нужно изменять страницу nginx и конфигурационный файл:
+
+
+
+    Клиент нажимает на слово-ссылку, после чего его перенаправляет на html-страницу с картинкой.
+    
+добавить в index.nginx-debian.html:
+<a href="https://www.qries.com/">
+      <img alt="Qries" src="https://upload.wikimedia.org/wikipedia/ru/thumb/4/4d/Wojak.png/200px-Wojak.png" width=150" height="70">
+
+
+    Клиент нажимает на слово-ссылку, по которой можно скачать файл mp3 с музыкой.
+
+scp -i "rsa1.5.pem" /home/sokol/Desktop/music.mp3 ubuntu@3.67.11.232:~
+music.mp3                                                             100% 9553KB   1.6MB/s   00:05    
+
+на инстансе перенести music.mp3 в папку с сайтом,
+добавить в index.nginx-debian.html : 
+    <a href="music.mp3" download> music </a>
+
+   Gus-G.jpg 
+
+
+
+
+    Сделать регулярное выражение для отображения картинок(png, jpg). Если формат jpg, то перевернуть картинку с помощью nginx. 
+*\.png *\.jpg
+sudo apt install libnginx-mod-http-image-filter    
+
+
+location /путь_к_изображениям {
+    if ($request_filename ~* ^.*\.jpg$) {
+        image_filter rotate 180;
+    }
+
+    if ($rotate_image = "1") {
+        proxy_pass http://localhost:8080;  # Поменяйте это на вашу конфигурацию прокси
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # Добавьте здесь необходимую конфигурацию для переворота изображения
+        # Например, используйте модуль ngx_http_image_filter_module:
+        # image_filter rotate 180;
+    }
+
+    # Добавьте здесь остальную конфигурацию для обработки изображений
+}
+
+image_filter rotate 180
+    rotates images counter-clockwise by the specified number of degrees. Parameter value can contain variables.
+---------------------------------------------------------------------------------------------------------
+
+7. Создать второй сервер t2.micro, установить Apache и PHP(fpm), взять за основу info.php файл. Настроить Apache на обслуживание данного файла.
+
+<VirtualHost *:80>
+        # The ServerName directive sets the request scheme, hostname and port that
+        # the server uses to identify itself. This is used when creating
+        # redirection URLs. In the context of virtual hosts, the ServerName
+        # specifies what hostname must appear in the request's Host: header to
+        # match this virtual host. For the default virtual host (this file) this
+        # value is not decisive as it is used as a last resort host regardless.
+        # However, you must set it for any further virtual host explicitly.
+        #ServerName www.example.com
+
+        ServerAdmin webmaster@localhost
+        DocumentRoot /var/www/html
+
+
+        <FilesMatch \.php$>
+
+# If you are using a Unix socket, use the following format,
+        # rewriting the path to the socket to match your php-fpm configuration
+        SetHandler "proxy:unix:/run/php-fpm/www.sock|fcgi://localhost"
+        </FilesMatch>
+
+        # Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
+        # error, crit, alert, emerg.
+        # It is also possible to configure the loglevel for particular
+        # modules, e.g.
+        #LogLevel info ssl:warn
+
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+        # For most configuration files from conf-available/, which are
+        # enabled or disabled at a global level, it is possible to
+        # include a line for only one particular virtual host. For example the
+        # following line enables the CGI configuration for this host only
+        # after it has been globally disabled with "a2disconf".
+        #Include conf-available/serve-cgi-bin.conf
+</VirtualHost>
+
+# vim: syntax=apache ts=4 sw=4 sts=4 sr noet
+-------------------------------------------------------------------------------------------------------
+8. Создать слово-ссылку в html-странице, которая будет перенаправлять запрос с Nginx-cервера на Apache-сервер.

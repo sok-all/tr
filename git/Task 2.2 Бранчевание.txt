@@ -1,0 +1,122 @@
+    Task 2.2 Бранчевание 
+ 
+ https://devops-gitlab.inno.ws/alexandra.sokol/devops-task1
+    
+    В репозитории devops-task1, загруженном на хостинг в предыдущем задании, создай с помощью git checkout и git branch две новые ветки: develop и feature/new-site. 
+    
+sokol@Vostro-3580:~/Desktop/devops-task1$ git checkout -b feature/new-site
+Switched to a new branch 'feature/new-site'
+sokol@Vostro-3580:~/Desktop/devops-task1$ git checkout -b develop
+Switched to a new branch 'develop'
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    В ветке develop измени настройки в nginx.conf: замени worker_connections на 16384 и закоммить изменения. В ветке develop измени nginx.conf, включи сжатие ответа для типа application/json и закоммить изменения.
+    
+sokol@Vostro-3580:~/Desktop/devops-task1$ vim nginx.conf 
+sokol@Vostro-3580:~/Desktop/devops-task1$ git add nginx.conf 
+sokol@Vostro-3580:~/Desktop/devops-task1$ git commit
+[develop 7c7760f] worker_connections 16384
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+ mode change 100644 => 100755 nginx.conf
+sokol@Vostro-3580:~/Desktop/devops-task1$ vim nginx.conf 
+...
+gzip_types application/json
+# text/plain text/css application/javascript text/xml application/xml application/xml+rss text/javascript;
+...
+sokol@Vostro-3580:~/Desktop/devops-task1$ git add nginx.conf 
+sokol@Vostro-3580:~/Desktop/devops-task1$ git commit
+[develop 1acff35] gzip for app/json
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    В ветке feature/new-site добавь файл conf.d/mysite.domain.com.conf с базовым описанием статического сайта и закоммить изменения.
+    
+sokol@Vostro-3580:~/Desktop/devops-task1$ cat >> mysite.domain.com.conf 
+server {
+  listen 80;
+  listen [::]:80 ipv6only=on;
+  server_name httpstatus.dieg.info;
+  root /var/www/httpstatus;
+  index index.html index.htm;
+  access_log  /var/log/nginx/httpstatus.access.log;
+  error_log  /var/log/nginx/httpstatus.error.log;
+ 
+  location / {
+    try_files $uri $uri/ =404;
+   }
+}
+sokol@Vostro-3580:~/Desktop/devops-task1$ git add mysite.domain.com.conf 
+sokol@Vostro-3580:~/Desktop/devops-task1$ git commit
+[feature/new-site 38c1ee2] mysite.conf
+ 1 file changed, 13 insertions(+)
+ create mode 100644 mysite.domain.com.conf
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Добавь легковесный тег v0.1 на последний коммит в  ветке{{develop}} (где изменял nginx.conf). 
+    
+sokol@Vostro-3580:~/Desktop/devops-task1$ git checkout develop 
+Switched to branch 'develop'
+sokol@Vostro-3580:~/Desktop/devops-task1$ git tag v0.1
+sokol@Vostro-3580:~/Desktop/devops-task1$ git tag 
+v0.1
+--------------------------------------------------------------------------------------------
+    Добавь файл .gitignore в ветку feature/new-site.  Файл gitignore должен быть составлен таким образом, чтобы исключать из репозитория папку tmp и все ее содержимое. Создай локально папку tmp с несколькими файлами в ней, закоммить изменения.
+    
+sokol@Vostro-3580:~/Desktop/devops-task1$ cat >> .gitignore
+tmp/
+^C
+sokol@Vostro-3580:~/Desktop/devops-task1$ git add .gitignore 
+sokol@Vostro-3580:~/Desktop/devops-task1$ git commit
+[feature/new-site 85894d8] gitignore
+ 1 file changed, 1 insertion(+)
+ create mode 100644 .gitignore
+sokol@Vostro-3580:~/Desktop/devops-task1$ mkdir tmp
+sokol@Vostro-3580:~/Desktop/devops-task1$ cd tmp
+sokol@Vostro-3580:~/Desktop/devops-task1/tmp$ touch file1
+sokol@Vostro-3580:~/Desktop/devops-task1/tmp$ touch file2
+sokol@Vostro-3580:~/Desktop/devops-task1/tmp$ cd ..
+sokol@Vostro-3580:~/Desktop/devops-task1$ git add -f tmp
+sokol@Vostro-3580:~/Desktop/devops-task1$ git commit
+[feature/new-site 85e1ee4] tmp
+ 2 files changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 tmp/file1
+ create mode 100644 tmp/file2
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Загрузи обе ветки на gitlab. Загрузи тег на хостинг gitlab-trainee.inno.ws с помощью git push и проверь его наличие. Присутствует ли директория tmp в ветке feature/new-site?
+    
+ root@Vostro-3580:/home/sokol/Desktop/devops-task1# git push gitlab feature/new-site
+Enumerating objects: 11, done.
+Counting objects: 100% (11/11), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (8/8), done.
+Writing objects: 100% (10/10), 1003 bytes | 501.00 KiB/s, done.
+Total 10 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: 
+remote: To create a merge request for feature/new-site, visit:
+remote:   https://devops-gitlab.inno.ws/alexandra.sokol/devops-task1/-/merge_requests/new?merge_request%5Bsource_branch%5D=feature%2Fnew-site
+remote: 
+To ssh://devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task1.git
+ * [new branch]      feature/new-site -> feature/new-site
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# git checkout develop
+Switched to branch 'develop'
+root@Vostro-3580:/home/sokol/Desktop/devops-task1# git push gitlab develop
+Enumerating objects: 8, done.
+Counting objects: 100% (8/8), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 695 bytes | 347.00 KiB/s, done.
+Total 6 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: 
+remote: To create a merge request for develop, visit:
+remote:   https://devops-gitlab.inno.ws/alexandra.sokol/devops-task1/-/merge_requests/new?merge_request%5Bsource_branch%5D=develop
+remote: 
+To ssh://devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task1.git
+ * [new branch]      develop -> develop
+ 
+ root@Vostro-3580:/home/sokol/Desktop/devops-task1# git push gitlab --tags
+Total 0 (delta 0), reused 0 (delta 0), pack-reused 0
+To ssh://devops-gitlab.inno.ws:54042/alexandra.sokol/devops-task1.git
+ * [new tag]         v0.1 -> v0.1
+
+
+папка tmp отображается (forced commit)
+   

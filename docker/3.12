@@ -1,0 +1,53 @@
+Чекпоинты:
+
+    Скачай конфигурационный файл nginx. Запусти контейнер со следующими параметрами:
+
+    должен работать в фоне,
+
+    слушает на хосте 127.0.0.1:8889,
+
+    имеет имя inno-dkr-02,
+
+    должен пробрасывать скачанный тобой конфигурационный файл nginx внутрь контейнера как основной конфигурационный файл,
+
+    образ - nginx:stable.
+    
+    
+docker run -d -p 127.0.0.1:8889:80 --name inno-dkr-02 -v /home/sokol/Downloads/nginx.conf:/etc/nginx/nginx.conf nginx:stable
+
+
+    Проверь работу, обратившись к 127.0.0.1:8889, - в ответ должно возвращать строку Welcome to the training program Innowise: Docker Выведи в консоли список запущенных контейнеров - контейнер должен быть запущен. Выполни подсчет md5sum конфигурационного файла nginx командой: docker exec -ti inno-dkr-02 md5sum /etc/nginx/nginx.conf
+    
+    curl http://127.0.0.1:8889
+    
+    docker ps
+    
+    docker exec -ti inno-dkr-02 md5sum /etc/nginx/nginx.conf
+    
+    
+    
+    
+    
+    root@Vostro-3580:/home/sokol/Downloads# docker run -d -p 127.0.0.1:8889:80 --name inno-dkr-01 -v /home/sokol/Downloads/nginx.conf:/etc/nginx/nginx.conf nginx:stable
+2913271c823ab184ce4109bde94d8ade17d0dcf185e40a0f798de82f07a1033c
+root@Vostro-3580:/home/sokol/Downloads# curl http://127.0.0.1:8889
+Welcome to the training program Innowise: Docker!
+root@Vostro-3580:/home/sokol/Downloads# docker ps
+CONTAINER ID   IMAGE          COMMAND                  CREATED              STATUS              PORTS                    NAMES
+2913271c823a   nginx:stable   "/docker-entrypoint.…"   About a minute ago   Up About a minute   127.0.0.1:8889->80/tcp   inno-dkr-01
+root@Vostro-3580:/home/sokol/Downloads#  docker exec -ti inno-dkr-02 md5sum /etc/nginx/nginx.conf
+Error response from daemon: No such container: inno-dkr-02
+root@Vostro-3580:/home/sokol/Downloads# docker rm --force inno-dkr-01
+inno-dkr-01
+root@Vostro-3580:/home/sokol/Downloads# docker run -d -p 127.0.0.1:8889:80 --name inno-dkr-02 -v /home/sokol/Downloads/nginx.conf:/etc/nginx/nginx.conf nginx:stable
+3d034959d84f4db9008672df57a1c4287f99b3343b6b532f25700be056deeaff
+root@Vostro-3580:/home/sokol/Downloads# curl http://127.0.0.1:8889
+Welcome to the training program Innowise: Docker!
+root@Vostro-3580:/home/sokol/Downloads# docker ps
+CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS          PORTS                    NAMES
+3d034959d84f   nginx:stable   "/docker-entrypoint.…"   30 seconds ago   Up 29 seconds   127.0.0.1:8889->80/tcp   inno-dkr-02
+root@Vostro-3580:/home/sokol/Downloads# docker exec -ti inno-dkr-02 md5sum /etc/nginx/nginx.conf
+1ef3ea062764d1e4a69ce0d246b39e8f  /etc/nginx/nginx.conf
+root@Vostro-3580:/home/sokol/Downloads# 
+
+

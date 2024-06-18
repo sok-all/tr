@@ -1,0 +1,242 @@
+    Создай тестовый файл testfile}}размером 10МБ при помощи команды {{dd if=/dev/zero of=./testfile bs=1M count=10
+
+    Для выполнения задания будем использовать следующий Dockerfile
+
+FROM ubuntu:20.04
+ENV testenv1=env1
+#создадим пользователя
+RUN groupadd --gid 2000 user && useradd --uid 2000 --gid 2000 --shell /bin/bash --create-home user
+#посмотрим состояние кэша apt до установки nginx
+RUN ls -lah /var/lib/apt/lists/
+RUN apt-get update -y && apt-get install nginx -y
+#Повторно проверим состояние кэша apt
+RUN ls -lah /var/lib/apt/lists/
+#Очистим кзш
+RUN rm -rf /var/lib/apt/lists/*
+RUN ls -lah /var/lib/apt/lists/
+#Скопируем наш тестовый файл
+COPY testfile .
+#Сменим права
+RUN chown user:user testfile
+USER user
+CMD ["sleep infinity"]
+
+    Собери образ на основе указанного Dockerfile с тэгом inno-dkr-11:default (если будут проблемы со скачиванием пакетов, тебе может помочь флаг --network=host)
+root@Vostro-3580:/home/sokol/3-21# dd if=/dev/zero of=./testfile bs=1M count=10
+10+0 records in
+10+0 records out
+10485760 bytes (10 MB, 10 MiB) copied, 0.0184816 s, 567 MB/s
+root@Vostro-3580:/home/sokol/3-21# docker build . -t inno-dkr-11:default --network=host
+[+] Building 26.4s (14/14) FINISHED                                                       docker:default
+ => [internal] load build definition from Dockerfile                                                0.0s
+ => => transferring dockerfile: 723B                                                                0.0s
+ => [internal] load .dockerignore                                                                   0.0s
+ => => transferring context: 2B                                                                     0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:20.04                                     1.0s
+ => [1/9] FROM docker.io/library/ubuntu:20.04@sha256:f2034e7195f61334e6caff6ecf2e965f92d11e8883090  3.8s
+ => => resolve docker.io/library/ubuntu:20.04@sha256:f2034e7195f61334e6caff6ecf2e965f92d11e8883090  0.0s
+ => => sha256:f2034e7195f61334e6caff6ecf2e965f92d11e888309065da85ff50c617732b8 1.13kB / 1.13kB      0.0s
+ => => sha256:bac6081102aae54ba4bcc714695b8f637e42768c7f376f374c428bab043ddc0f 424B / 424B          0.0s
+ => => sha256:f78909c2b360d866b3220655c0b079838258b8891a12ac25fc670f0cbb54229f 2.30kB / 2.30kB      0.0s
+ => => sha256:527f5363b98e562da03d2e0bbf86fd7c34f487bffd9b27a3cf0a9afea2f0ee1f 27.51MB / 27.51MB    3.1s
+ => => extracting sha256:527f5363b98e562da03d2e0bbf86fd7c34f487bffd9b27a3cf0a9afea2f0ee1f           0.5s
+ => [internal] load build context                                                                   0.1s
+ => => transferring context: 10.49MB                                                                0.1s
+ => [2/9] RUN groupadd --gid 2000 user && useradd --uid 2000 --gid 2000 --shell /bin/bash --create  0.3s
+ => [3/9] RUN ls -lah /var/lib/apt/lists/                                                           0.1s
+ => [4/9] RUN apt-get update -y && apt-get install nginx -y                                        19.5s
+ => [5/9] RUN ls -lah /var/lib/apt/lists/                                                           0.1s
+ => [6/9] RUN rm -rf /var/lib/apt/lists/*                                                           0.2s
+ => [7/9] RUN ls -lah /var/lib/apt/lists/                                                           0.2s 
+ => [8/9] COPY testfile .                                                                           0.2s 
+ => [9/9] RUN chown user:user testfile                                                              0.2s 
+ => exporting to image                                                                              0.7s 
+ => => exporting layers                                                                             0.7s 
+ => => writing image sha256:7fc6c44a7674bf3a84c00622a4d484c06c0308e6327d758574378d238a9893cd        0.0s
+ => => naming to docker.io/library/inno-dkr-11:default                                              0.0s
+
+    Используя команду docker inspect inno-dkr-11:default внимательно изучи вывод команды, она позволяет получать дополнительную информацию об образе/контейнере
+root@Vostro-3580:/home/sokol/3-21# docker inspect inno-dkr-11:default
+[
+    {
+        "Id": "sha256:7fc6c44a7674bf3a84c00622a4d484c06c0308e6327d758574378d238a9893cd",
+        "RepoTags": [
+            "inno-dkr-11:default"
+        ],
+        "RepoDigests": [],
+        "Parent": "",
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2024-01-25T19:30:04.266537895+03:00",
+        "Container": "",
+        "ContainerConfig": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": null,
+            "Cmd": null,
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "",
+            "Entrypoint": null,
+            "OnBuild": null,
+            "Labels": null
+        },
+        "DockerVersion": "",
+        "Author": "",
+        "Config": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "user",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "testenv1=env1"
+            ],
+            "Cmd": [
+                "sleep infinity"
+            ],
+            "ArgsEscaped": true,
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "",
+            "Entrypoint": null,
+            "OnBuild": null,
+            "Labels": {
+                "org.opencontainers.image.ref.name": "ubuntu",
+                "org.opencontainers.image.version": "20.04"
+            }
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 202313009,
+        "VirtualSize": 202313009,
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/pmrunu03x1hakv9e82wsogv5b/diff:/var/lib/docker/overlay2/cjebpmjjmv763pve9yucmuu36/diff:/var/lib/docker/overlay2/u6v3uv7wj5x9ppum3tet1gv84/diff:/var/lib/docker/overlay2/gq10hs3neo9aenwcy5tfqs99z/diff:/var/lib/docker/overlay2/5tlbww9pg2suovcom00e3oaoi/diff:/var/lib/docker/overlay2/yt87c2ygngoiw76rnt4zv1e40/diff:/var/lib/docker/overlay2/v9glf71m4tvmomlnu26vm5b0z/diff:/var/lib/docker/overlay2/6b47c6dcd9433c387e6ae3f75edf38ad8385c9ccb1365200a6da60356e847d57/diff",
+                "MergedDir": "/var/lib/docker/overlay2/d28tsbovgcznsy7ngssjp3iwf/merged",
+                "UpperDir": "/var/lib/docker/overlay2/d28tsbovgcznsy7ngssjp3iwf/diff",
+                "WorkDir": "/var/lib/docker/overlay2/d28tsbovgcznsy7ngssjp3iwf/work"
+            },
+            "Name": "overlay2"
+        },
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:3a03f09d212915b240e9d216069aba5652ed4765c7e4b098c65e71860d47b8e1",
+                "sha256:b5693848426b02d546ee654321714caa3f8ce89a18f62d9c4c520a0566de5b03",
+                "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+                "sha256:48608cdee1af8b1c376dee48363b74cb131bed547f5fdce9d5464b378ffa39ae",
+                "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+                "sha256:3321a8cd9c2d86b876fd07ebae9c4cc52959fc6d31ee6b4b1a85b85386edfe03",
+                "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+                "sha256:db39ea6e94b9f72530dc53e3eb5c332163b754e279f548e90550265a30bbc34e",
+                "sha256:0345d4055e2b9538e384de5efbeaadce4344980cdae9b524bcb2c1abfdda7a23"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2024-01-25T19:30:04.969516166+03:00"
+        }
+    }
+]
+
+    Используя команду docker history inno-dkr-11:default --no-trunc изучи список слоёв в собранном контейнере
+    Обрати внимание:
+root@Vostro-3580:/home/sokol/3-21# docker history inno-dkr-11:default --no-trunc
+IMAGE                                                                     CREATED              CREATED BY                                                                                                                 SIZE      COMMENT
+sha256:7fc6c44a7674bf3a84c00622a4d484c06c0308e6327d758574378d238a9893cd   About a minute ago   CMD ["sleep infinity"]                                                                                                     0B        buildkit.dockerfile.v0
+<missing>                                                                 About a minute ago   USER user                                                                                                                  0B        buildkit.dockerfile.v0
+<missing>                                                                 About a minute ago   RUN /bin/sh -c chown user:user testfile # buildkit                                                                         10.5MB    buildkit.dockerfile.v0
+<missing>                                                                 About a minute ago   COPY testfile . # buildkit                                                                                                 10.5MB    buildkit.dockerfile.v0
+<missing>                                                                 About a minute ago   RUN /bin/sh -c ls -lah /var/lib/apt/lists/ # buildkit                                                                      0B        buildkit.dockerfile.v0
+<missing>                                                                 About a minute ago   RUN /bin/sh -c rm -rf /var/lib/apt/lists/* # buildkit                                                                      0B        buildkit.dockerfile.v0
+<missing>                                                                 About a minute ago   RUN /bin/sh -c ls -lah /var/lib/apt/lists/ # buildkit                                                                      0B        buildkit.dockerfile.v0
+<missing>                                                                 About a minute ago   RUN /bin/sh -c apt-get update -y && apt-get install nginx -y # buildkit                                                    108MB     buildkit.dockerfile.v0
+<missing>                                                                 About a minute ago   RUN /bin/sh -c ls -lah /var/lib/apt/lists/ # buildkit                                                                      0B        buildkit.dockerfile.v0
+<missing>                                                                 About a minute ago   RUN /bin/sh -c groupadd --gid 2000 user && useradd --uid 2000 --gid 2000 --shell /bin/bash --create-home user # buildkit   658kB     buildkit.dockerfile.v0
+<missing>                                                                 About a minute ago   ENV testenv1=env1                                                                                                          0B        buildkit.dockerfile.v0
+<missing>                                                                 6 weeks ago          /bin/sh -c #(nop)  CMD ["/bin/bash"]                                                                                       0B        
+<missing>                                                                 6 weeks ago          /bin/sh -c #(nop) ADD file:5696198fbfd4074852bdee76ffd84da75da8de76727cef4f0cdd265f7bee6b76 in /                           72.8MB    
+<missing>                                                                 6 weeks ago          /bin/sh -c #(nop)  LABEL org.opencontainers.image.version=20.04                                                            0B        
+<missing>                                                                 6 weeks ago          /bin/sh -c #(nop)  LABEL org.opencontainers.image.ref.name=ubuntu                                                          0B        
+<missing>                                                                 6 weeks ago          /bin/sh -c #(nop)  ARG LAUNCHPAD_BUILD_ARCH                                                                                0B        
+<missing>                                                                 6 weeks ago          /bin/sh -c #(nop)  ARG RELEASE                                                                                             0B        
+
+    У всех ли слоёв есть размер ?
+
+    Изучи документацию и ответьте на вопрос, какие три директивы могут создавать слои (полезные ссылки "Best practices for writing Dockerfile", раздел "Minimize the number of layers" )
+
+    Обрати внимание на директиву RUN chown user:user testfile - посмотри сколько она добавила в итоговый образ
+
+    Используя команду docker images оцени размер получившегося образа
+root@Vostro-3580:/home/sokol/3-21# docker images
+REPOSITORY    TAG             IMAGE ID       CREATED          SIZE
+inno-dkr-11   default         7fc6c44a7674   2 minutes ago    202MB
+    Внеси изменения в Dockerfile:
+
+    Замени директиву RUN apt-get update -y && apt-get install nginx -y на RUN apt-get update -y && apt-get install nginx -y && rm -rf /var/lib/apt/lists/*
+
+    Используя дополнительные флаги директивы COPY, назначь пользователя user владельцем скопированных файлов
+
+    Убери директиву RUN chown user:user testfile
+
+    Собери образ с тэгом inno-dkr-11:optimized. 
+root@Vostro-3580:/home/sokol/3-21# docker build . -t inno-dkr-11:optimized
+[+] Building 40.2s (13/13) FINISHED                                                       docker:default
+ => [internal] load build definition from Dockerfile                                                0.0s
+ => => transferring dockerfile: 755B                                                                0.0s
+ => [internal] load .dockerignore                                                                   0.0s
+ => => transferring context: 2B                                                                     0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:20.04                                     1.9s
+ => [internal] load build context                                                                   0.0s
+ => => transferring context: 32B                                                                    0.0s
+ => CACHED [1/8] FROM docker.io/library/ubuntu:20.04@sha256:f2034e7195f61334e6caff6ecf2e965f92d11e  0.0s
+ => [2/8] RUN groupadd --gid 2000 user && useradd --uid 2000 --gid 2000 --shell /bin/bash --create  0.4s
+ => [3/8] RUN ls -lah /var/lib/apt/lists/                                                           0.4s
+ => [4/8] RUN apt-get update -y && apt-get install nginx -y && rm -rf /var/lib/apt/lists/*         35.9s
+ => [5/8] RUN ls -lah /var/lib/apt/lists/                                                           0.4s 
+ => [6/8] RUN rm -rf /var/lib/apt/lists/*                                                           0.2s 
+ => [7/8] RUN ls -lah /var/lib/apt/lists/                                                           0.5s 
+ => [8/8] COPY testfile .                                                                           0.0s 
+ => exporting to image                                                                              0.3s 
+ => => exporting layers                                                                             0.3s 
+ => => writing image sha256:df979106abe7ad9c35f1c586bb2da970bec399dc0d012fa91d2004b1a38a3c0a        0.0s
+ => => naming to docker.io/library/inno-dkr-11:optimized                                            0.0s
+    
+    Используя команду docker history inno-dkr-11:optimized --no-trunc изучи список слоёв в собранном контейнере. Сравни количество и размер с inno-dkr-11:default
+root@Vostro-3580:/home/sokol/3-21# docker history inno-dkr-11:optimized --no-trunc
+IMAGE                                                                     CREATED              CREATED BY                                                                                                                 SIZE      COMMENT
+sha256:df979106abe7ad9c35f1c586bb2da970bec399dc0d012fa91d2004b1a38a3c0a   23 seconds ago       CMD ["sleep infinity"]                                                                                                     0B        buildkit.dockerfile.v0
+<missing>                                                                 23 seconds ago       USER user                                                                                                                  0B        buildkit.dockerfile.v0
+<missing>                                                                 23 seconds ago       COPY testfile . # buildkit                                                                                                 10.5MB    buildkit.dockerfile.v0
+<missing>                                                                 23 seconds ago       RUN /bin/sh -c ls -lah /var/lib/apt/lists/ # buildkit                                                                      0B        buildkit.dockerfile.v0
+<missing>                                                                 24 seconds ago       RUN /bin/sh -c rm -rf /var/lib/apt/lists/* # buildkit                                                                      0B        buildkit.dockerfile.v0
+<missing>                                                                 24 seconds ago       RUN /bin/sh -c ls -lah /var/lib/apt/lists/ # buildkit                                                                      0B        buildkit.dockerfile.v0
+<missing>                                                                 25 seconds ago       RUN /bin/sh -c apt-get update -y && apt-get install nginx -y && rm -rf /var/lib/apt/lists/* # buildkit                     59.3MB    buildkit.dockerfile.v0
+<missing>                                                                 About a minute ago   RUN /bin/sh -c ls -lah /var/lib/apt/lists/ # buildkit                                                                      0B        buildkit.dockerfile.v0
+<missing>                                                                 About a minute ago   RUN /bin/sh -c groupadd --gid 2000 user && useradd --uid 2000 --gid 2000 --shell /bin/bash --create-home user # buildkit   658kB     buildkit.dockerfile.v0
+<missing>                                                                 About a minute ago   ENV testenv1=env1                                                                                                          0B        buildkit.dockerfile.v0
+<missing>                                                                 6 weeks ago          /bin/sh -c #(nop)  CMD ["/bin/bash"]                                                                                       0B        
+<missing>                                                                 6 weeks ago          /bin/sh -c #(nop) ADD file:5696198fbfd4074852bdee76ffd84da75da8de76727cef4f0cdd265f7bee6b76 in /                           72.8MB    
+<missing>                                                                 6 weeks ago          /bin/sh -c #(nop)  LABEL org.opencontainers.image.version=20.04                                                            0B        
+<missing>                                                                 6 weeks ago          /bin/sh -c #(nop)  LABEL org.opencontainers.image.ref.name=ubuntu                                                          0B        
+<missing>                                                                 6 weeks ago          /bin/sh -c #(nop)  ARG LAUNCHPAD_BUILD_ARCH                                                                                0B        
+<missing>                                                                 6 weeks ago          /bin/sh -c #(nop)  ARG RELEASE                                                                                             0B        
+
+    Используя команду docker images сравни размеры итоговых образов
+    
+root@Vostro-3580:/home/sokol/3-21# docker images
+REPOSITORY    TAG             IMAGE ID       CREATED          SIZE
+inno-dkr-11   optimized       df979106abe7   54 seconds ago   143MB
+inno-dkr-11   default         7fc6c44a7674   6 minutes ago    202MB
+

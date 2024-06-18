@@ -1,0 +1,246 @@
+    Склонируй репозиторий voting в свой аккаунт на devops-gitlab.inno.ws с именем dkr-30-voting.
+
+    Напиши docker-compose.yml файл, который бы собирал приложение, запускал его и все требуемые зависимости:
+
+    nginx - проксирует запросы на voting и доступен на хосте на порту 20000. Пример конфигурационного файла находится в папке nginx, смонтируй его в /etc/nginx/conf.d/default.conf. Используй alpine-версию образа.
+
+    voting - собирается из репозитория;
+
+    mysql - база данных, к которой подключается voting;
+
+    redis - In-memory хранилище для кэша;
+    
+    
+    services:
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "20000:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./public:/var/www/html/public
+    restart: unless-stopped
+
+
+  voting:
+    build: .
+    ports:
+      - '9000:9000'
+    environment:
+       DB_HOST: 'mysql'
+       DB_PORT: '3306'
+       DB_DATABASE: 'voting'
+       DB_USERNAME: 'voting'
+       DB_PASSWORD: 'voting'
+       CACHE_DRIVER: 'redis'
+
+
+  mysql:
+    image: mysql:5.6
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+    environment:
+      MYSQL_DATABASE: 'voting'
+      MYSQL_PORT: '3306'
+      MYSQL_USER: 'voting'
+      MYSQL_PASSWORD: 'voting'
+      MYSQL_ROOT_PASSWORD: 'password'
+    volumes:
+      - db:/var/lib/mysql
+
+
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    environment:
+      REDIS_HOST: "redis"
+      REDIS_PASSWORD: ""
+      SESSION_DRIVER: "redis"
+      SESSION_CONNECTION: "session"
+      CACHE_DRIVER: "redis"
+
+
+
+					  fluentd:
+					    image: fluent/fluentd:v0.12-debian     
+					    volumes:
+					      - ./fluentd/conf:/fluentd/etc
+					    links:
+					      - "elasticsearch"
+					    ports:
+					      - "24224:24224"
+					      - "24224:24224/udp"
+3.39
+					  elasticsearch:
+					    image: elasticsearch:8.9.0
+					    expose:
+					      - 9200
+					    ports:
+					      - "9200:9200"
+
+					  kibana:
+					    image: kibana:5.0.0
+					    links:
+					      - "elasticsearch"
+					    ports:
+					      - "5601:5601"
+
+
+
+volumes:
+  db:
+      
+    
+    
+    
+    
+
+    Запусти сервис с именем проекта inno30.
+    
+  
+docker compose -p inno30 -f docker-compose.yml up -d  
+    
+ ✔ Container inno30-voting-1  Started                                                               0.9s 
+ ✔ Container inno30-mysql-1   Started                                                               0.7s 
+ ✔ Container inno30-redis-1   Started                                                               0.9s 
+ ✔ Container inno30-nginx-1   Started                                                               0.6s 
+root@Vostro-3580:/home/sokol/3-38/dkr-30# docker ps
+CONTAINER ID   IMAGE                 COMMAND                  CREATED         STATUS         PORTS                                       NAMES
+c2d4e1ff44c7   nginx:stable-alpine   "/docker-entrypoint.…"   2 minutes ago   Up 2 minutes   0.0.0.0:20000->80/tcp, :::20000->80/tcp     inno30-nginx-1
+8a174e2791bc   mysql:5.6             "docker-entrypoint.s…"   2 minutes ago   Up 2 minutes   0.0.0.0:3306->3306/tcp, :::3306->3306/tcp   inno30-mysql-1
+24bfd11eb194   inno30-voting         "docker-php-entrypoi…"   2 minutes ago   Up 2 minutes   0.0.0.0:9000->9000/tcp, :::9000->9000/tcp   inno30-voting-1
+214aba964f95   redis                 "docker-entrypoint.s…"   2 minutes ago   Up 2 minutes   0.0.0.0:6379->6379/tcp, :::6379->6379/tcp   inno30-redis-1
+    
+
+    Сконфигурируй приложение, выполнив команды из раздела Migration и Seeding в README репозитория.
+    
+docker container exec -it inno30-voting-1 /bin/sh
+
+php artisan migrate --force
+php artisan db:seed --force
+
+/var/www/html # php artisan db:seed --force
+Seeding: PollsSeeder
+Seeded:  PollsSeeder (42.52 seconds)
+Database seeding completed successfully.
+
+
+    Обратись к сервису по localhost:20000/polls (в ответе ты должен увидеть json-объект).
+
+db???????
+    
+root@Vostro-3580:/home/sokol/3-38/dkr-30# curl localhost:20000
+{}root@Vostro-3580:/home/sokol/3-38/dkr-30# curl localhost:20000/polls
+root@Vostro-3580:/home/sokol/3-38/dkr-30# 
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+ version: '3'
+
+services:
+
+  mysql:
+
+    image: mysql:5.6
+
+    ports:
+
+      - "3306:3306"
+
+    environment:
+
+      MYSQL_ROOT_PASSWORD: 'password'
+
+      MYSQL_USER: 'voting'
+
+      MYSQL_PASSWORD: 'voting'
+
+      MYSQL_DATABASE: 'voting'
+
+    depends_on:
+
+      - nginx
+
+    volumes:
+
+      - my-db:/var/lib/mysql
+
+  voting:
+
+    image: voting:latest
+
+    ports:
+
+      - "9000:9000"
+
+    build: .
+
+    environment: 
+
+        DB_HOST: "mysql"
+
+        DB_PORT: "3306"
+
+        DB_DATABASE: "voting"
+
+        DB_USERNAME: "voting"
+
+        DB_PASSWORD: "voting"
+
+   
+
+    
+
+  redis:
+
+    image: redis:latest
+
+    environment:
+
+        REDIS_HOST: "redis"
+
+        REDIS_PASSWORD: ""
+
+        SESSION_DRIVER: "redis"
+
+        SESSION_CONNECTION: "session"
+
+        CACHE_DRIVER: "redis"
+
+   nginx:
+
+    image: nginx:stable-alpine 
+
+    ports:
+
+      - "20000:80"
+
+    volumes:
+
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+      - ./public:/var/www/html/public
+
+    restart: unless-stopped
+
+volumes:
+
+  my-db:  
+    

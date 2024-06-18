@@ -1,0 +1,188 @@
+
+FROM golang:1.19.1-alpine
+ENV GO111MODULE=auto
+ARG SECRET=secret
+RUN apk add git
+#RUN echo $GOPATH  =/go 
+WORKDIR /go/src/app
+COPY . .
+RUN echo "$SECRET" > secret.txt
+RUN go get -d -v
+RUN go build -o app
+FROM alpine:3.10.3
+COPY --from=0 /go/src/app/app /usr/local/bin
+COPY --from=0 /go/src/app/secret.txt /usr/local/bin/
+CMD ["/go/src/app/app"]
+
+
+
+
+
+
+
+
+
+https://winitpro.ru/index.php/2021/03/03/nastrojka-lokalnogo-docker-registry/
+
+
+
+
+
+
+
+
+
+
+
+Task 3.27 Images. Registry
+Description
+
+Используемые технологии:  Linux, Docker, Nginx
+
+Давай ненадолго отвлечемся от темы оптимизации размера образов и обсудим другую важную тему - хранилище образов.
+
+В Docker хранилище образов имеет название registry, русский эквивалент — реестр, но мы будем пользоваться английским вариантом названия.
+
+Итак, registry — это хранилище, в котором хранятся все образы.
+
+Ты спросишь: «То, что я вижу в docker images, — это тоже registry?»
+
+Правильный ответ: «Нет». Registry — это централизованное хранилище, а вывод docker images — это список локальных образов, которые ты либо собрал сам, либо скачал из реестра.
+
+Теперь ты понимаешь, что с первого задания ты пользовался registry, — при первом вводе команды docker run nginx:stable мы как раз обращались к registry за образом nginx:stable.
+
+Самый распространенный и известный реестр образов — это Docker Hub. Если у образа нет никакого префикса с доменом, то ты либо используешь собственный образ, который ты так назвал, либо он хранится в Docker Hub.
+
+Registry используется как раз для хранения образов в одном общедоступном месте. Мы не можем собирать образ каждый раз, когда нам нужно запустить приложение, это не рационально. Кроме того, запускать приложение на собственном ноутбуке - это одно, а вот на десятках или даже сотнях серверах — совсем другое.
+
+В этом и проявляется одно из главных достоинств Docker — образ бинарно идентичен от окружения к окружению и при одинаковой настройке хоста должен запускаться и работать одинаково. На практике бывают расхождения, но все же.
+
+Кроме Docker Hub, есть еще и другие облачные registry. Наиболее известные из них — Quay, GitLab Registry, Google Container Registry. Некоторые из них интегрированы с определенным программным продуктом.
+
+Важно знать и о том, что ты можешь пользоваться собственным registry, если этого требует инфраструктура и у тебя нет других программных продуктов.
+
+Теперь давай вспомним, для чего у команды docker build есть опция --tag. Да, во-первых, она задает имя репозитория и тег, но, кроме того, имя образа может выглядеть не только как nginx:stable или cytopia/ansible:2.9, но и как quay.io/calico/node или даже registry.rebrainme.com/USERNAME/REPO:TAG.
+
+Как пример, название может быть таким: registry.rebrainme.com/vasiliy/myapp:1.0, где:
+
+    Реестр - registry.rebrainme.com
+
+    Репозиторий - vasiliy/myapp
+
+    Тег - 1.0
+
+Итак, скачивать образы мы уже умеем - и через docker pull, и просто через docker run, и через Dockerfile, но как и куда нам отправлять наши образы?
+
+Все очень похоже на команды git, потому что для этого используется команда push.
+push
+
+docker push — позволяет отправлять образ в registry.
+
+Здесь все довольно просто — отправляем, указывая нужный реестр и имя образа. Например, docker push registry.innowise.com/inno/docker-course/example:latest.
+
+Но для того, чтобы "пушить" образы, как правило, требуется авторизация - подтверждение прав на отправку образов в соответствующий репозиторий.
+login
+
+docker login — позволяет авторизоваться в registry с предоставленными данными для входа.
+
+Registry представляет собой как раз адреса, которые стоят перед именами образа — quay.io или registry.innowise.com. Если же не передавать никакого адреса, то авторизация будет проходить по умолчанию в Docker Hub (
+
+ ).
+
+Интересная опция при автоматизации сборки и выкладки приложений: в docker login можно передавать полный адрес с именем репозитория и тегом — login пройдет, как должен.
+
+После входа у тебя будет создан файл ~/.docker/config.json, в котором будут храниться данные для входа, чтобы тебе не требовалось логиниться каждый раз заново.
+
+Вид файла может быть разным, например в виде строк с логином и паролем, или в виде указания на внешнее хранилище.
+
+Ну что ж, время "пушить" — публиковать на сервер при помощи команды docker push наши старые наработки!
+
+Чекпоинты:
+
+    Разверни локальный registry согласно официальной документации.
+mkdir /home/sokol/3-27            тут будет реестр
+
+sudo docker run -d -p 5000:5000 --restart=always --name registry registry:2
+
+    Собери образ приложения gocalc, которое мы собирали ранее.
+    3-24/docker/gocalc# docker build . -t gocalc:3-27 --build-arg SECRET=secretsecret
+[+] Building 3.0s (16/16) FINISHED                                                        docker:default
+    
+docker images
+REPOSITORY   TAG        IMAGE ID       CREATED             SIZE
+react        frontend   f57a1ce737a2   52 minutes ago      18.5MB
+java         backend    2bd1edf80c27   About an hour ago   315MB
+vuejs        latest     9a9bb8128868   About an hour ago   952MB
+django       latest     7cbe52c1a7e3   About an hour ago   307MB
+alonetone    dev        b5f223ba263a   2 hours ago         201MB
+alonetone    prod       567152e33177   2 hours ago         201MB
+gocalc       3-27       6e6249545495   24 hours ago        18.3MB
+
+    Образ необходимо загрузить  в локальный registry.
+ docker tag [OPTIONS] IMAGE[:TAG] [REGISTRYHOST/][USERNAME/]NAME[:TAG]   
+ 
+ curl ifconfig.me
+185.53.133.78
+
+sudo docker tag microsevice_v1 <host ip>:5000/microsevice_v1
+
+Данной командой мы добавили тег для локального образа. Формат тега:
+
+<hostname | ip >:port/<image name>:<tag> 
+
+docker tag gocalc:3-27 185.53.133.78:5000/gocalc:3-27
+
+
+
+
+
+
+
+
+
+
+
+docker run -d -p 5000:5000 --restart=always --name registry registry:2
+
+docker tag gocalc:3-27 localhost:5000/gocalc:3-27
+
+docker push localhost:5000/gocalc:3-27
+The push refers to repository [localhost:5000/gocalc]
+7e391ffef446: Pushed 
+9b11981680fa: Pushed 
+77cae8ab23bf: Pushed 
+3-27: digest: sha256:bdf114798de7b23662d26ac817e3f364f4fbbc199349fe814da338923af70ef7 size: 946
+
+
+docker images
+REPOSITORY                  TAG        IMAGE ID       CREATED        SIZE
+gocalc                      3-27       6e6249545495   25 hours ago   18.3MB
+localhost:5000/gocalc       3-27       6e6249545495   25 hours ago   18.3MB
+registry                    2          a8781fe3b7a2   4 days ago     25.4MB
+
+
+
+
+
+
+docker tag registry:2 localhost:5000/registry
+root@Vostro-3580:/home/sokol/3-27# docker images
+REPOSITORY                  TAG        IMAGE ID       CREATED        SIZE
+react                       frontend   f57a1ce737a2   2 hours ago    18.5MB
+java                        backend    2bd1edf80c27   2 hours ago    315MB
+vuejs                       latest     9a9bb8128868   2 hours ago    952MB
+django                      latest     7cbe52c1a7e3   2 hours ago    307MB
+alonetone                   dev        b5f223ba263a   2 hours ago    201MB
+alonetone                   prod       567152e33177   2 hours ago    201MB
+185.53.133.78:5000/gocalc   3-27       6e6249545495   25 hours ago   18.3MB
+gocalc                      3-27       6e6249545495   25 hours ago   18.3MB
+localhost:5000/gocalc       3-27       6e6249545495   25 hours ago   18.3MB
+registry                    2          a8781fe3b7a2   4 days ago     25.4MB
+localhost:5000/registry     latest     a8781fe3b7a2   4 days ago     25.4MB
+root@Vostro-3580:/home/sokol/3-27# 
+
+
+
+
+
+    
