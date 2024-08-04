@@ -1,0 +1,228 @@
+#Task 1.2 Утилиты обработки текста/логов
+Description
+
+Используемые технологии:  Linux, Awk/Sed, Cut
+
+Большую часть времени ты будешь втыкать в различные конфиги, как уже скорее всего втыкал в sshd_conf в прошлом задании. Но желательно не только втыкать, но и уметь работать с этими конфигами, а именно его содержимым - текстом/логами. В Linux есть куча встроенных утилит для обработки информации. Часть утилит просто выводит какую-либо информацию в консоль(как например df), другие же(awk,sed) позволяют обрабатывать полученную информацию, а также изменять текст не только на выходе, но и вставлять нужные значения в сам файл. 
+
+На самом деле работать с флагами команд иногда становится достаточно сложно, еще сложнее найти значение каждого флага. Например - команда df -h. Сама команда df показывает список всех файловых систем по именам устройств, сообщает их размер, занятое и свободное пространство и точки монтирования. А вот с поиском значения -h могут быть проблемы. Конечно можно вопользоваться командой man df, но это не devops-way. Поэтому можешь пользоваться сайтом explainshell.com.
+
+А теперь к делу. Для манипуляций с файлами существует множество команд, мы разберем основные:
+
+    `cut` - используется для извлечения части строки из файла или ввода стандартного потока данных. Она может извлекать фрагменты данных по позициям символов или по позициям полей (разделенных разделителем). Например, можно использовать cut для извлечения только нужных колонок из таблицы или для извлечения только части имени файла из полного пути.
+
+Например, у тебя есть файл file.txt с со следующим содержимым:
+    123,John,Doe,23
+    456,Jane,Smith,29
+    789,Bob,Johnson,45
+
+Мы хотим извлечь из него только имена и фамилии, для этого используем следующую команду:
+    cut -d ',' -f 2,3 file.txt. На выходе получаем:
+    John,Doe
+    Jane,Smith
+    Bob,Johnson
+
+Возможно у тебя возникла мысль: вот я хочу взять вывод из одной команды и обработать его другой командой. Здесь мы и сталкиваемся с input & output redirections, а также pipes. 
+Обо всем поподробнее. Для того, чтобы перенаправить вывод из одной команды в другую используется символ “|” (pipe). Например cat log.txt | grep error, это выведет только те строки из файла log.txt, в которых есть слово error. Другой пример: ls -l /etc | cut -c1-10 | sort берет вывод команды ls -l, затем отбирает первые 10 символов каждой строки с помощью команды cut -c1-10, а далее сортирует sort их и выводит на экран. 
+
+Но что, если мы хотим сохранить вывод в файл? Для этого используется символ “>>”(output). 
+Теперь команда ls -l /etc | cut -c1-10 | sort >> file.txt сохранит все проведенные манипуляции ранее в файл file.txt, все достаточно просто.
+
+Теперь поговорим про работу с самим содержимым файла. Как уже упоминалось ранее, мы будем использовать команды awk и sed. Для работы с ними нужно уметь в regular expressions.
+
+    AWK является языком программирования, который предназначен для обработки и анализа текстовых данных. Он обладает сильными возможностями для работы со строками, регулярными выражениями и математическими функциями. Например команда echo "new data" | awk '{print $0}' >> file.txt возьмет строку new data и добавит ее в конец файла file.txt
+
+    `SED` же является утилитой, которая предназначена для изменения текста в файле или в потоке данных. Он обладает сильными возможностями для работы с регулярными выражениями и используется для простых и быстрых изменений текста. Обычно используется для замены текста, вставки или удаления строк. Команда sed -i 's/old_string/new_string/g' file.txt заменит old_string в file.txt на new_string. 
+
+Перейдем к заданию.
+
+##Чекпоинты:
+
+    Вывести размеры разделов диска в отдельный файл. Отсортировать количество столбцов до трех, оставив только Filesystem, Use%, Mounted on.
+
+    Узнать размер всех файлов и папок в директории /etc. Отсортировать вывод так, чтобы показывало только 10 самых больших файлов.
+
+    Cоздать файл со следующим содержанием. 
+
+    NDS/A
+    NSDA
+    ANS!D
+    NAD/A
+
+     Вывести строки NDS/A и NAD/A из файла используя awk или sed(regexp). 
+
+    Вывести пронумерованные строчки из /etc/passwd, в которых есть оболочка /bin/bash, и перенаправить вывод в файл.
+
+    Заменить все строчки с /bin/sh на /bin/bash(проводить на бэкапе).
+
+    Используемые команды должны быть записаны в отдельный файлик.
+
+
+    1.Вывести размеры разделов диска в отдельный файл. Отсортировать количество столбцов до трех, оставив только Filesystem, Use%, Mounted on.
+
+	*вывод определенного элемента из каждой строки
+
+```
+sokol@sokol:~/Desktop$ df -h | awk '{print $1"  "$5"  "$6" "$7}'  > file.txt
+sokol@sokol:~/Desktop$ cat file.txt
+Filesystem  Use%  Mounted on
+tmpfs  1%  /run 
+/dev/nvme0n1p2  90%  / 
+tmpfs  1%  /dev/shm 
+tmpfs  1%  /run/lock 
+/dev/nvme0n1p1  7%  /boot/efi 
+tmpfs  1%  /run/user/1000 
+```
+
+
+    2.Узнать размер всех файлов и папок в директории /etc. Отсортировать вывод так, чтобы показывало только 10 самых больших файлов.
+
+```
+	sudo du -h * | sort -rnk1 | head -10
+	*вывод размеров всех файлов и папок в удобном формате
+	*сортировка в порядке убывания чисел по первой колонке
+	*вывод первых 10ти строк
+	
+	772K	Documents/osnn/lab/6
+	768K	Documents/app/build/intermediates/merged_res
+	764K	Documents/app/build/intermediates/merged_res/debug
+	724K	Documents/app/build/intermediates/merged_res_blame_folder
+	720K	Documents/app/build/intermediates/merged_res_blame_folder/debug
+	716K	Documents/app/build/intermediates/merged_res_blame_folder/debug/out
+	704K	Documents/app/build/intermediates/merged_res_blame_folder/debug/out/multi-v2
+	640K	Documents/osnn/lab/9
+	616K	Documents/osnn/lab/3
+	464K	Documents/osnn/lab/10
+```
+
+    3.Cоздать файл со следующим содержанием. 
+
+```
+	NDS/A
+	NSDA
+	ANS!D
+	NAD/A
+```
+```
+	cat >> file2.txt
+	NDS/A
+	NSDA
+	ANS!D
+	NAD/A
+	^C
+```
+
+    4.Вывести строки NDS/A и NAD/A из файла используя awk или sed(regexp). 
+
+```
+	awk '/^N...A$/ {print}' file2.txt
+	*вывод строк из 5ти символов, начинающихся с N и заканчивающихся на А
+	
+	NDS/A
+	NAD/A
+```
+
+    5.Вывести пронумерованные строчки из /etc/passwd, в которых есть оболочка /bin/bash, и перенаправить вывод в файл.
+
+```
+	nl passwd | awk '/bin.bash$/ {print}'  >> /home/sokol/Desktop/passwd.txt
+	*нумерация строк
+	*поиск строк с данной частью в конце
+	*вывод в файл
+```
+
+	вывод в файл:
+
+```
+	1 root:x:0:0:root:/root:/bin/bash
+	47 sokol:x:1000:1000:sokol,,,:/home/sokol:/bin/bash
+	50 postgres:x:130:139:PostgreSQL administrator,,,:/var/lib/postgresql:/bin/bash
+```
+
+    6.Заменить все строчки с /bin/sh на /bin/bash(проводить на бэкапе).
+
+```
+	nl /etc/passwd >> passwd2.txt | sed -i 's|/bin/bash|/bin/sh|g' passwd2.txt
+	*вывод всех пронумерованных строк из passwd в passwd2.txt
+	*замена всех частей с /bin/bash на /bin/sh (изначально строк с /bin/sh не было, поэтому сделала наоборот)
+```
+
+	вывод в файл:
+
+```
+     1	root:x:0:0:root:/root:/bin/sh
+     2	daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+     3	bin:x:2:2:bin:/bin:/usr/sbin/nologin
+     4	sys:x:3:3:sys:/dev:/usr/sbin/nologin
+     5	sync:x:4:65534:sync:/bin:/bin/sync
+     6	games:x:5:60:games:/usr/games:/usr/sbin/nologin
+     7	man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+     8	lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+     9	mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+    10	news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+    11	uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+    12	proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+    13	www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+    14	backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+    15	list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+    16	irc:x:39:39:ircd:/run/ircd:/usr/sbin/nologin
+    17	gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+    18	nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+    19	systemd-network:x:100:102:systemd Network Management,,,:/run/systemd:/usr/sbin/nologin
+    20	systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd:/usr/sbin/nologin
+    21	messagebus:x:102:105::/nonexistent:/usr/sbin/nologin
+    22	systemd-timesync:x:103:106:systemd Time Synchronization,,,:/run/systemd:/usr/sbin/nologin
+    23	syslog:x:104:111::/home/syslog:/usr/sbin/nologin
+    24	_apt:x:105:65534::/nonexistent:/usr/sbin/nologin
+    25	tss:x:106:112:TPM software stack,,,:/var/lib/tpm:/bin/false
+    26	uuidd:x:107:115::/run/uuidd:/usr/sbin/nologin
+    27	systemd-oom:x:108:116:systemd Userspace OOM Killer,,,:/run/systemd:/usr/sbin/nologin
+    28	tcpdump:x:109:117::/nonexistent:/usr/sbin/nologin
+    29	avahi-autoipd:x:110:119:Avahi autoip daemon,,,:/var/lib/avahi-autoipd:/usr/sbin/nologin
+    30	usbmux:x:111:46:usbmux daemon,,,:/var/lib/usbmux:/usr/sbin/nologin
+    31	dnsmasq:x:112:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
+    32	kernoops:x:113:65534:Kernel Oops Tracking Daemon,,,:/:/usr/sbin/nologin
+    33	avahi:x:114:121:Avahi mDNS daemon,,,:/run/avahi-daemon:/usr/sbin/nologin
+    34	cups-pk-helper:x:115:122:user for cups-pk-helper service,,,:/home/cups-pk-helper:/usr/sbin/nologin
+    35	rtkit:x:116:123:RealtimeKit,,,:/proc:/usr/sbin/nologin
+    36	whoopsie:x:117:124::/nonexistent:/bin/false
+    37	sssd:x:118:125:SSSD system user,,,:/var/lib/sss:/usr/sbin/nologin
+    38	speech-dispatcher:x:119:29:Speech Dispatcher,,,:/run/speech-dispatcher:/bin/false
+    39	nm-openvpn:x:120:126:NetworkManager OpenVPN,,,:/var/lib/openvpn/chroot:/usr/sbin/nologin
+    40	saned:x:121:128::/var/lib/saned:/usr/sbin/nologin
+    41	colord:x:122:129:colord colour management daemon,,,:/var/lib/colord:/usr/sbin/nologin
+    42	geoclue:x:123:130::/var/lib/geoclue:/usr/sbin/nologin
+    43	pulse:x:124:131:PulseAudio daemon,,,:/run/pulse:/usr/sbin/nologin
+    44	gnome-initial-setup:x:125:65534::/run/gnome-initial-setup/:/bin/false
+    45	hplip:x:126:7:HPLIP system user,,,:/run/hplip:/bin/false
+    46	gdm:x:127:133:Gnome Display Manager:/var/lib/gdm3:/bin/false
+    47	sokol:x:1000:1000:sokol,,,:/home/sokol:/bin/sh
+    48	fwupd-refresh:x:128:137:fwupd-refresh user,,,:/run/systemd:/usr/sbin/nologin
+    49	ftp:x:129:138:ftp daemon,,,:/srv/share/ftp:/usr/sbin/nologin
+    50	postgres:x:130:139:PostgreSQL administrator,,,:/var/lib/postgresql:/bin/sh
+```
+
+
+
+Темы на обсуждение с ментором (изучаемая теория):
+
+Различные способы обработки текста с помощью утилит awk, sed и cut в Linux. Обсуждение основных функций и возможностей каждой из этих утилит.
+
+Использование команды cut для извлечения нужных данных из файла или потока данных. Обсуждение различных опций и флагов команды cut.
+
+Работа с input & output redirections и pipes для перенаправления вывода команд и комбинирования их результатов.
+
+Объяснение работы и возможностей языка программирования awk для обработки текстовых данных. Рассмотрение различных функций и возможностей awk.
+
+Использование утилиты sed для изменения текста в файле или потоке данных. Обсуждение различных команд и флагов sed.
+
+Регулярные выражения в awk и sed. Объяснение основных конструкций и использование регулярных выражений для поиска и замены текста.
+
+Практическое применение команд awk, sed и cut для решения задач обработки текстовых данных. Создание скриптов и команд для выполнения различных операций.
+
+Обсуждение различных способов перенаправления вывода команд в файлы или другие команды. Рассмотрение файловых дескрипторов и возможностей перенаправления стандартных потоков.
+
+Примеры использования команд awk, sed и cut в реальных сценариях, таких как обработка лог-файлов, анализ данных и манипуляции с текстовыми файлами.
+
+Рекомендации по эффективному использованию awk, sed и cut для обработки текстовых данных. Лучшие практики и советы для улучшения производительности и точности работы с текстом.
+
